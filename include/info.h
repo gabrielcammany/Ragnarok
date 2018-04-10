@@ -5,10 +5,10 @@
 #ifndef RAGNAROK_OPERATION_H
 #define RAGNAROK_OPERATION_H
 
-#define INFO 1
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
 
-int checkOperation();
-
-
+void info(char *name);
 
 #endif //RAGNAROK_OPERATION_H
