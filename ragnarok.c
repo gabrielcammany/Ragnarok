@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include "include/info.h"
 
 #define INFO "/info"
 #define SEARCH "/search"
@@ -10,38 +11,45 @@
 #define DISABLE_HIDE "-h"
 #define NEW_DATE "-d"
 
-int check_operation(char *cmd);
+int check_operation(int argc, char **argv);
 
 int main(int argc, char **argv) {
 
-
 	printf("Hello, World!\n");
-
-
+    info("/Users/Daniel/Documents/17-18/SOA/Ragnarok/Volume_5.fat12");
+    info("/Users/Daniel/Documents/17-18/SOA/Ragnarok/Volume_7.fat16");
+    info("/Users/Daniel/Documents/17-18/SOA/Ragnarok/Volume_2.fat32");
+    info("/Users/Daniel/Documents/17-18/SOA/Ragnarok/Volume_1_1024_Block_Size.ext4");
+    info("/Users/Daniel/Documents/17-18/SOA/Ragnarok/Volume_2_1024_Block_Size.ext2");
+    info("/Users/Daniel/Documents/17-18/SOA/Ragnarok/Volume_1_4096_Block_Size.ext3");
 	return 0;
 }
 
 
 int check_operation(int argc, char **argv) {
-	if (argc < 2) return -1;
+    if (argc < 2) return -1;
 
-	if (strcmp(argv[1], INFO)) {
-		if (argc != 3) return -1;
+    if (!strcmp(argv[1], INFO)) {
+        if (argc != 3) return -1;
 
-		info(argv[2]);
-	} else if (!strcmp(argv[1], SEARCH)) {
+        info(argv[2]);
+    } else if (!strcmp(argv[1], SEARCH)) {
 
-	} else if (!strcmp(argv[1], SHOW)) {
+    } else if (!strcmp(argv[1], SHOW)) {
 
-	} else if (!strcmp(argv[1], READ)) {
+    } else if (!strcmp(argv[1], READ)) {
 
-	} else if (!strcmp(argv[1], WRITE)) {
+    } else if (!strcmp(argv[1], WRITE)) {
 
-	} else if (!strcmp(argv[1], ENABLE_HIDE)) {
+    } else if (!strcmp(argv[1], ENABLE_HIDE)) {
 
-	} else if (!strcmp(argv[1], DISABLE_HIDE)) {
+    } else if (!strcmp(argv[1], DISABLE_HIDE)) {
 
-	} else if (!strcmp(argv[1], NEW_DATE)) {
+    } else if (!strcmp(argv[1], NEW_DATE)) {
 
-	}
+    }
 }
+
+//https://www.easeus.com/resource/fat32-disk-structure.htm
+//https://ext4.wiki.kernel.org/index.php/Ext4_Disk_Layout
+//http://www.nongnu.org/ext2-doc/ext2.html#SUPERBLOCK
