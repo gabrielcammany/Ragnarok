@@ -55,3 +55,8 @@ dkms.conf
 CMakeLists.txt
 cmake-build-debug/
 *.ext4
+*.ext2
+*.ext3
+*.fat32
+*.fat16
+*.fat12
