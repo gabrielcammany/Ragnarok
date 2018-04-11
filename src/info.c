@@ -34,7 +34,6 @@ int detecta_tipo(int fd) {
         lseek(fd, 1024 + 0x60, SEEK_SET);
         uint32_t feature_compat;
         read(fd, &feature_compat, sizeof feature_compat);
-        printf("32 bytes %X\n", feature_compat);
         if (feature_compat & 0x40) {
             return EXT4;
         } else {
@@ -49,7 +48,6 @@ int detecta_tipo(int fd) {
     } else {
         //could possibly be a FAT filesystem
         char fat_type[6];
-
         if (strcmp(read_at(fd, 0x36, fat_type), FAT12_NAME) == 0) {
             return FAT12;
         } else if (strcmp(fat_type, FAT16_NAME) == 0) {
