@@ -20,7 +20,6 @@ int main(int argc, char **argv) {
 		printf("Error!\n");
 
 	}
-
 	return 0;
 }
 
@@ -49,6 +48,7 @@ int check_operation(int argc, char **argv) {
 	} else if (!strcmp(argv[1], NEW_DATE)) {
 
 	}
+	return 0;
 }
 
 //https://www.easeus.com/resource/fat32-disk-structure.htm

@@ -10,7 +10,9 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <string.h>
-#include "math.h"
+#include <inttypes.h>
+#include <math.h>
+#include <time.h>
 
 #define FAT12_NAME "FAT12"
 #define FAT16_NAME "FAT16"
@@ -20,7 +22,7 @@
 
 void info(char *name);
 
-void EXT4_info(int fd);
+void ext4_info(int fd);
 
 void FAT32_info(int fd);
 
