@@ -5,4 +5,8 @@
 #ifndef RAGNAROK_SEARCH_H
 #define RAGNAROK_SEARCH_H
 
+#include "info.h"
+
+void search(int fd, char *name);
+
 #endif //RAGNAROK_SEARCH_H

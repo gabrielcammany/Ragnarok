@@ -5,35 +5,17 @@
 
 #include "../include/info.h"
 
-enum {
-	EXT2,
-	EXT3,
-	EXT4,
-	FAT12,
-	FAT16,
-	FAT32,
-	UNKNOWN
-};
-
 const char *const NAMES[] = {"EXT2", "EXT3", "EXT4", "FAT12", "FAT16", "FAT32", "UNKNOWN"};
 
-void info(char *name) {
-	int fd = open(name, 0644, O_RDONLY);
-	int type = 0;
-
-	if (fd < 0) {
-		fprintf(stderr, "Error al abrir el fichero.\n");
-		return;
-	}
-
-	type = detecta_tipo(fd);
+void info(int fd) {
+	int type = detecta_tipo(fd);
 
 	switch (type) {
 		case EXT4:
 			ext4_info(fd);
 			break;
 		case FAT32:
-			FAT32_info(fd);
+            fat32_info(fd);
 			break;
 		default:
 			printf(ERR_FILESYSTEM, NAMES[type]);
@@ -152,24 +134,25 @@ void read_with_offset(int fd, unsigned int offset, void *out, size_t size) {
 	read(fd, out, size);
 }
 
-void FAT32_read(int fd, unsigned int offset, void *out, size_t size) {
+void fat32_read(int fd, unsigned int offset, void *out, size_t size) {
 	lseek(fd, offset, SEEK_SET);
 	read(fd, out, size);
 }
 
-void FAT32_info(int fd) {
+void fat32_info(int fd) {
 	char name[12];
+	uint32_t big_value;
 	uint16_t value;
 	uint8_t small_value;
 
 	printf("---- Filesystem Information ----\n\n");
 	printf("FileSystem: FAT32\n\n");
 
-	FAT32_read(fd, 0x03, name, sizeof (char)*8);
+    fat32_read(fd, 0x03, name, sizeof(char) * 8);
 	name[8] = 0;
 	printf("System name: %s\n",name);
 
-	FAT32_read(fd, 0x0B, &value, sizeof (value));
+    fat32_read(fd, 0x0B, &value, sizeof(value));
 	printf("Sector Size: %d\n", value);
 
 	read(fd, &small_value, sizeof (small_value));
@@ -181,13 +164,13 @@ void FAT32_info(int fd) {
 	read(fd, &small_value, sizeof (small_value));
 	printf("Number of FATs: %d\n", small_value);
 
-	read(fd, &value, sizeof (value));
-	printf("Maximum Root Entries: %d\n", value);
+    fat32_read(fd, 0x24, &big_value, sizeof(big_value));
+	printf("Maximum Root Entries: %d\n", big_value);
 
-	FAT32_read(fd, 0x16, &value, sizeof (value));
+    fat32_read(fd, 0x16, &value, sizeof(value));
 	printf("Sectors per FAT: %d\n", value);
 
-	FAT32_read(fd, 0x47, name, sizeof (char)*11);
+    fat32_read(fd, 0x47, name, sizeof(char) * 11);
 	name[11] = 0;
 	printf("Label: %s\n\n",name);
 }
@@ -198,4 +181,21 @@ char *read_at(int fd, unsigned int offset, char *out) {
 	read(fd, out, sizeof out);
 	out[5] = 0;
 	return out;
+}
+
+void ext4_get_structure(int fd, ext4_block *out) {
+    read_with_offset(fd, 0x18, &(out->block_size), sizeof(uint32_t));
+    out->block_size = pow(2, 10 + out->block_size);
+
+    //low
+	uint32_t low;
+    read_with_offset(fd, out->block_size + 0x08, &low, sizeof low);
+
+    //high
+	uint32_t high;
+	read_with_offset(fd, out->block_size + 0x28, &high, sizeof high);
+
+	out->inode_table_loc = (((uint64_t) (high)) << 32) | low;
+
+	read_with_offset(fd, 0x58, &(out->inode_size) ,sizeof(uint16_t));
 }
