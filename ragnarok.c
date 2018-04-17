@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "include/info.h"
+#include "include/search.h"
 
 #define INFO "-info"
 #define SEARCH "-search"
@@ -34,6 +35,10 @@ int check_operation(int argc, char **argv) {
 		info(argv[2]);
 
 	} else if (!strcmp(argv[1], SEARCH)) {
+
+		if (argc != 4) return -1;
+
+		info(argv[2]);
 
 	} else if (!strcmp(argv[1], SHOW)) {
 
