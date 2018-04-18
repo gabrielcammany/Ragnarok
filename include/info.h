@@ -34,6 +34,7 @@ typedef struct __attribute__((packed)) {
     uint32_t block_size;
     uint64_t inode_table_loc;
     uint16_t inode_size;
+    uint16_t group_descriptor_size;
 } ext4_block;
 
 void info(int fd);

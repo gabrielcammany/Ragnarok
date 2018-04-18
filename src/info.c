@@ -197,5 +197,7 @@ void ext4_get_structure(int fd, ext4_block *out) {
 
 	out->inode_table_loc = (((uint64_t) (high)) << 32) | low;
 
-	read_with_offset(fd, 0x58, &(out->inode_size) ,sizeof(uint16_t));
+	read_with_offset(fd, 0x58, &(out->inode_size), sizeof(uint16_t));
+
+	read_with_offset(fd, 0xFE, &(out->group_descriptor_size), sizeof(uint16_t));
 }
