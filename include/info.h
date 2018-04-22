@@ -31,11 +31,27 @@ enum {
 };
 
 typedef struct __attribute__((packed)) {
-    uint32_t block_size;
-    uint64_t inode_table_loc;
-    uint16_t inode_size;
+	uint32_t size;
+	uint32_t count;
+	uint32_t free_count;
+} Block;
+
+typedef struct __attribute__((packed)) {
+	uint64_t table_loc;
+	uint16_t size;
+	uint32_t count;
+	uint32_t free_count;
+} Inode;
+
+
+typedef struct __attribute__((packed)) {
+    Block block;
+	Inode inode;
+
     uint16_t group_descriptor_size;
-} ext4_block;
+} EXT4_info;
+
+EXT4_info ext4;
 
 void info(int fd);
 
@@ -43,12 +59,12 @@ void ext4_info(int fd);
 
 void fat32_info(int fd);
 
-void read_with_offset(int fd, unsigned int offset, void *out, size_t size);
+void read_with_offset(int fd, unsigned long offset, void *out, size_t size);
 
 int detecta_tipo(int fd);
 
 char *read_at(int fd, unsigned int offset, char out[6]);
 
-void ext4_get_structure(int fd, ext4_block *out);
+void ext4_get_structure(int fd);
 
 #endif //RAGNAROK_OPERATION_H

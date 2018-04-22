@@ -129,7 +129,7 @@ void ext4_info(int fd) {
 
 }
 
-void read_with_offset(int fd, unsigned int offset, void *out, size_t size) {
+void read_with_offset(int fd, unsigned long offset, void *out, size_t size) {
 	lseek(fd, EXT4_OFFSET + offset, SEEK_SET);
 	read(fd, out, size);
 }
@@ -183,21 +183,30 @@ char *read_at(int fd, unsigned int offset, char *out) {
 	return out;
 }
 
-void ext4_get_structure(int fd, ext4_block *out) {
-    read_with_offset(fd, 0x18, &(out->block_size), sizeof(uint32_t));
-    out->block_size = pow(2, 10 + out->block_size);
+void ext4_get_structure(int fd) {
+
+    read_with_offset(fd, 0x18, &(ext4.block.size), sizeof(uint32_t));
+	ext4.block.size = (uint32_t) pow(2, 10 + ext4.block.size);
 
     //low
 	uint32_t low;
-    read_with_offset(fd, out->block_size + 0x08, &low, sizeof low);
+    read_with_offset(fd, ext4.block.size + 0x08, &low, sizeof low);
 
     //high
 	uint32_t high;
-	read_with_offset(fd, out->block_size + 0x28, &high, sizeof high);
+	read_with_offset(fd, ext4.block.size + 0x28, &high, sizeof high);
 
-	out->inode_table_loc = (((uint64_t) (high)) << 32) | low;
+	ext4.inode.table_loc = (((uint64_t) (high)) << 32) | low;
 
-	read_with_offset(fd, 0x58, &(out->inode_size), sizeof(uint16_t));
+	read_with_offset(fd, 0x58, &(ext4.inode.size), sizeof(uint16_t));
 
-	read_with_offset(fd, 0xFE, &(out->group_descriptor_size), sizeof(uint16_t));
+	read_with_offset(fd, 0xFE, &(ext4.group_descriptor_size), sizeof(uint16_t));
+
+	read_with_offset(fd, 0x00, &(ext4.inode.count), sizeof(uint32_t));
+
+	read_with_offset(fd, 0x10, &(ext4.inode.free_count), sizeof(uint32_t));
+
+	read_with_offset(fd, 0xC, &(ext4.block.free_count), sizeof(uint32_t));
+
+
 }
