@@ -6,6 +6,8 @@
 #define RAGNAROK_SEARCH_H
 
 #include "info.h"
+#define FOUND 1
+#define NOT_FOUND 0
 
 typedef struct __attribute__((packed)) {
 	uint16_t eh_magic;
@@ -37,6 +39,7 @@ typedef struct __attribute__((packed)) {
 } ext4_dir_entry_2;
 
 
-void search(int fd, char *name);
+
+void search(char show, char *name);
 
 #endif //RAGNAROK_SEARCH_H

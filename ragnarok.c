@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-    int fd = open(argv[2], 0644, O_RDONLY);
+    fd = open(argv[2], 0644, O_RDONLY);
 
     if (fd < 0) {
         fprintf(stderr, "Error al abrir el fichero.\n");
@@ -42,12 +42,13 @@ int main(int argc, char **argv) {
 
     switch (type) {
         case O_INFO:
-            info(fd);
+            info();
             break;
         case O_SEARCH:
-            search(fd, argv[3]);
+            search(0,argv[3]);
             break;
         case O_SHOW:
+			search(1,argv[3]);
             break;
         case O_READ:
             break;
@@ -76,7 +77,8 @@ int check_operation(int argc, char **argv) {
 		if (argc != 4) return -1;
 		return O_SEARCH;
 	} else if (!strcmp(argv[1], SHOW)) {
-
+		if (argc != 4) return -1;
+		return O_SHOW;
 	} else if (!strcmp(argv[1], READ)) {
 
 	} else if (!strcmp(argv[1], WRITE)) {

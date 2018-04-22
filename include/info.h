@@ -52,19 +52,22 @@ typedef struct __attribute__((packed)) {
 } EXT4_info;
 
 EXT4_info ext4;
+int fd;
 
-void info(int fd);
+void info();
 
-void ext4_info(int fd);
+void ext4_info();
 
-void fat32_info(int fd);
+void fat32_info();
 
-void read_with_offset(int fd, unsigned long offset, void *out, size_t size);
+void read_with_offset(unsigned long offset, void *out, size_t size);
 
-int detecta_tipo(int fd);
+int detecta_tipo();
 
-char *read_at(int fd, unsigned int offset, char out[6]);
+char *read_at(unsigned int offset, char out[6]);
 
-void ext4_get_structure(int fd);
+void ext4_get_structure();
+
+void ext4_inode_info(uint32_t inode);
 
 #endif //RAGNAROK_OPERATION_H
