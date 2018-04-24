@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include "../include/search.h"
 
-uint32_t _deep_ext4(char show, char *name, uint32_t inode);
+uint32_t _ext4(char show, char *name, uint32_t inode);
 
 uint32_t _deepsearch_leaf_ext4(char *name, uint16_t eh_entries);
 
@@ -15,12 +15,7 @@ uint64_t _deepshow_tree_ext4(uint64_t size, uint16_t eh_entries);
 
 uint64_t _deepshow_leaf_ext4(uint64_t size, uint16_t eh_entries);
 
-void _search_fat32(char *name);
-
-
-
-
-
+void _fat32(char *name);
 
 
 void search(char show, char *name) {
@@ -30,23 +25,25 @@ void search(char show, char *name) {
 
 			ext4_get_structure();
 
-			(show == 0 ? ext4_inode_info(_deep_ext4(show, name, 2)) : _deep_ext4(show, name, 2));
+			if(!show)
+				ext4_inode_info(_ext4(show, name, 2));
+			else
+				_ext4(show, name, 2);
 
 			break;
 		case FAT32:
-			_search_fat32(name);
+			_fat32(name);
 			break;
 		default:
 			break;
 	}
 }
 
-uint32_t _deep_ext4(char show, char *name, uint32_t inode) {
+uint32_t _ext4(char show, char *name, uint32_t inode) {
 	uint32_t return_value = 0;
 	uint32_t read_32 = 0;
 	uint32_t read_64 = 0;
 	ext4_extent_header header;
-	ext4_extent_idx *tree;
 
 	off_t offset = lseek(fd, 0, SEEK_CUR); //Guardar posicion puntero antes de modificarlo
 
@@ -70,7 +67,7 @@ uint32_t _deep_ext4(char show, char *name, uint32_t inode) {
 
 			printf("\nFile found! Showing content...\n\n");
 
-			_deep_ext4(2, NULL, return_value);
+			_ext4(2, NULL, return_value);
 
 		}
 
@@ -180,16 +177,12 @@ uint32_t _deepsearch_leaf_ext4(char *name, uint16_t eh_entries) {
 				&& strcmp(file_name, "..") != 0
 				&& dir_entry_2.file_type == 2) {
 
-				if (dir_entry_2.file_type == 2) {
+				if ((read_64 = _ext4(0, name, dir_entry_2.inode))) {
 
-					if ((read_64 = _deep_ext4(0, name, dir_entry_2.inode))) {
+					free(file_name);
+					free(leaf);
 
-						free(file_name);
-						free(leaf);
-
-						return (uint32_t) read_64;
-
-					}
+					return (uint32_t) read_64;
 
 				}
 
@@ -207,7 +200,6 @@ uint32_t _deepsearch_leaf_ext4(char *name, uint16_t eh_entries) {
 	return NOT_FOUND;
 
 }
-
 
 uint64_t _deepshow_tree_ext4(uint64_t size, uint16_t eh_entries) {
 
@@ -281,7 +273,6 @@ uint64_t _deepshow_leaf_ext4(uint64_t size, uint16_t eh_entries) {
 
 }
 
-
-void _search_fat32(char *name) {
+void _fat32(char *name) {
 
 }
