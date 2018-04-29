@@ -3,6 +3,7 @@
 //
 
 #include <stdlib.h>
+#include <wchar.h>
 #include "../include/search.h"
 #include "../include/info.h"
 
@@ -282,12 +283,24 @@ void _fat32(char *name) {
     //fat32.bytes_per_sector, fat32. sectors_per_fat, fat32.reserved_sectors, fat32.sectors_per_fat, fat32.root_first_cluster);
     int i = 0;
 	fat32_directory fat32_dir;
+	fat32_vfat vfat;
+	read(fd, &fat32_dir, sizeof fat32_dir);
 	printf("fat loc 0x%X\n", fat32.fat_location);
 	printf("first cluster 0x%X\n", fat32.first_cluster);
     for (; i < 10; i++) {
-
 		read(fd, &fat32_dir, sizeof fat32_dir);
-		printf("name %s\nattr 0x%X\ncluster H 0x%X\ncluster L 0x%X\nsize %d\n\n", fat32_dir.short_name, fat32_dir.attribute,
-		fat32_dir.cluster_high, fat32_dir.cluster_low, fat32_dir.size);
+    	if (fat32_dir.attribute == 0x0F) {
+    		lseek(fd, -sizeof(fat32_dir), SEEK_CUR);
+    		read(fd, &vfat, sizeof vfat);
+    		printf(L"nombre %ls\n", vfat.name);
+    		write(0, vfat.name, sizeof(vfat.name));
+			write(0, vfat.name2, sizeof(vfat.name2));
+			write(0, vfat.name3, sizeof(vfat.name3));
+    	} else {
+			printf("name %s\nattr 0x%X\ncluster H 0x%X\ncluster L 0x%X\nsize %d\n\n", fat32_dir.short_name, fat32_dir.attribute,
+				   fat32_dir.cluster_high, fat32_dir.cluster_low, fat32_dir.size);
+    	}
 	}
 }
+
+void
