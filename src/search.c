@@ -277,25 +277,28 @@ uint64_t _deepshow_leaf_ext4(uint64_t size, uint16_t eh_entries) {
 
 }
 
+char* fuckucs2(uint16_t *in, char* out, int size);
 void _fat32(char *name) {
-    lseek(fd, fat32.first_cluster, SEEK_SET);
     //printf("BYTES SECTOR %d\nsectors_per_cluster %d\n reserved_sectors %d\n sectors_per_fat %d\nroot_first_cluster %d",
     //fat32.bytes_per_sector, fat32. sectors_per_fat, fat32.reserved_sectors, fat32.sectors_per_fat, fat32.root_first_cluster);
     int i = 0;
 	fat32_directory fat32_dir;
 	fat32_vfat vfat;
-	read(fd, &fat32_dir, sizeof fat32_dir);
-	printf("fat loc 0x%X\n", fat32.fat_location);
-	printf("first cluster 0x%X\n", fat32.first_cluster);
-    for (; i < 10; i++) {
+	char out[15];
+	char final_name[256];
+	memset(final_name, 0, 256);
+
+    lseek(fd, fat32.first_cluster, SEEK_SET);
+    read(fd, &fat32_dir, sizeof fat32_dir);
+    for (; i < 16; i++) {
 		read(fd, &fat32_dir, sizeof fat32_dir);
     	if (fat32_dir.attribute == 0x0F) {
     		lseek(fd, -sizeof(fat32_dir), SEEK_CUR);
     		read(fd, &vfat, sizeof vfat);
-    		printf(L"nombre %ls\n", vfat.name);
-    		write(0, vfat.name, sizeof(vfat.name));
-			write(0, vfat.name2, sizeof(vfat.name2));
-			write(0, vfat.name3, sizeof(vfat.name3));
+            strcpy(final_name, fuckucs2(vfat.name, out, 5));
+            strcat(final_name, fuckucs2(vfat.name2, out, 6));
+            strcat(final_name, fuckucs2(vfat.name3, out, 2));
+            printf("NOM %s\n", final_name);
     	} else {
 			printf("name %s\nattr 0x%X\ncluster H 0x%X\ncluster L 0x%X\nsize %d\n\n", fat32_dir.short_name, fat32_dir.attribute,
 				   fat32_dir.cluster_high, fat32_dir.cluster_low, fat32_dir.size);
@@ -303,4 +306,19 @@ void _fat32(char *name) {
 	}
 }
 
-void
+char* fuckucs2(uint16_t *in, char* out, int size) {
+    int i;
+    for (i = 0; i < size; i++) {
+        if (in[i] == 0 || in[i] > 0xFF) {
+            break;
+        }
+        out[i] = (char) in[i];
+    }
+    out[i] = 0;
+    return out;
+}
+/*
+  3    2    1    0
+[   ][   ][   ][   ]
+[ ]  [ ]  [ ]  [ ]
+ */
