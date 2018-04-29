@@ -211,6 +211,18 @@ void ext4_get_structure() {
 
 }
 
+void fat32_get_structure() {
+	memset(&fat32, 0, sizeof fat32);
+	fat32_read(0x0B, &(fat32.bytes_per_sector), sizeof fat32.bytes_per_sector);
+	fat32_read(0x0D, &(fat32.sectors_per_cluster), sizeof fat32.sectors_per_cluster);
+	fat32_read(0x0E, &(fat32.reserved_sectors), sizeof fat32.reserved_sectors);
+	fat32_read(0x24, &(fat32.sectors_per_fat), sizeof fat32.sectors_per_fat);
+	fat32_read(0x2C, &(fat32.root_first_cluster), sizeof fat32.root_first_cluster);
+
+    fat32.fat_location = (uint32_t) (fat32.bytes_per_sector * (fat32.reserved_sectors));
+    fat32.first_cluster = fat32.fat_location + fat32.sectors_per_fat * fat32.bytes_per_sector * 2;
+}
+
 void ext4_inode_info(uint32_t inode){
 
 	if(!inode){

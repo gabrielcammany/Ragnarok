@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include "../include/search.h"
+#include "../include/info.h"
 
 uint32_t _ext4(char show, char *name, uint32_t inode);
 
@@ -15,8 +16,9 @@ uint64_t _deepshow_tree_ext4(uint64_t size, uint16_t eh_entries);
 
 uint64_t _deepshow_leaf_ext4(uint64_t size, uint16_t eh_entries);
 
-void _fat32(char *name);
+void _read_fat32_directory(fat32_directory* out);
 
+void _fat32(char *name);
 
 void search(char show, char *name) {
 
@@ -32,6 +34,7 @@ void search(char show, char *name) {
 
 			break;
 		case FAT32:
+			fat32_get_structure();
 			_fat32(name);
 			break;
 		default:
@@ -274,5 +277,17 @@ uint64_t _deepshow_leaf_ext4(uint64_t size, uint16_t eh_entries) {
 }
 
 void _fat32(char *name) {
+    lseek(fd, fat32.first_cluster, SEEK_SET);
+    //printf("BYTES SECTOR %d\nsectors_per_cluster %d\n reserved_sectors %d\n sectors_per_fat %d\nroot_first_cluster %d",
+    //fat32.bytes_per_sector, fat32. sectors_per_fat, fat32.reserved_sectors, fat32.sectors_per_fat, fat32.root_first_cluster);
+    int i = 0;
+	fat32_directory fat32_dir;
+	printf("fat loc 0x%X\n", fat32.fat_location);
+	printf("first cluster 0x%X\n", fat32.first_cluster);
+    for (; i < 10; i++) {
 
+		read(fd, &fat32_dir, sizeof fat32_dir);
+		printf("name %s\nattr 0x%X\ncluster H 0x%X\ncluster L 0x%X\nsize %d\n\n", fat32_dir.short_name, fat32_dir.attribute,
+		fat32_dir.cluster_high, fat32_dir.cluster_low, fat32_dir.size);
+	}
 }

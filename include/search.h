@@ -38,7 +38,15 @@ typedef struct __attribute__((packed)) {
 	uint8_t file_type;
 } ext4_dir_entry_2;
 
-
+typedef struct __attribute__((packed)) {
+    char short_name[11];
+    uint8_t attribute;
+    uint64_t caca;
+    uint16_t cluster_high;
+    uint32_t caca2;
+    uint16_t cluster_low;
+    uint32_t size;
+} fat32_directory;
 
 void search(char show, char *name);
 
