@@ -21,13 +21,13 @@
 #define ERR_FILESYSTEM "File System not recognized (%s)\n"
 
 enum {
-    EXT2,
-    EXT3,
-    EXT4,
-    FAT12,
-    FAT16,
-    FAT32,
-    UNKNOWN
+	EXT2,
+	EXT3,
+	EXT4,
+	FAT12,
+	FAT16,
+	FAT32,
+	UNKNOWN
 };
 
 typedef struct __attribute__((packed)) {
@@ -45,22 +45,22 @@ typedef struct __attribute__((packed)) {
 
 
 typedef struct __attribute__((packed)) {
-    Block block;
-    Inode inode;
+	Block block;
+	Inode inode;
 
-    uint16_t group_descriptor_size;
+	uint16_t group_descriptor_size;
 } EXT4_info;
 
 typedef struct __attribute__((packed)) {
-    uint16_t bytes_per_sector;
-    uint8_t sectors_per_cluster;
-    uint16_t reserved_sectors;
-    //no cal numbers of fats
-    uint32_t sectors_per_fat;
-    uint32_t root_first_cluster;
+	uint16_t bytes_per_sector;
+	uint8_t sectors_per_cluster;
+	uint16_t reserved_sectors;
+	//no cal numbers of fats
+	uint32_t sectors_per_fat;
+	uint32_t root_first_cluster;
 
-    uint32_t fat_location;
-    uint32_t first_cluster;
+	uint32_t fat_location;
+	uint32_t first_cluster;
 } FAT32_info;
 
 EXT4_info ext4;

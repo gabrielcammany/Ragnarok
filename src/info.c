@@ -16,7 +16,7 @@ void info() {
 			ext4_info();
 			break;
 		case FAT32:
-            fat32_info();
+			fat32_info();
 			break;
 		default:
 			printf(ERR_FILESYSTEM, NAMES[type]);
@@ -149,31 +149,31 @@ void fat32_info() {
 	printf("---- Filesystem Information ----\n\n");
 	printf("FileSystem: FAT32\n\n");
 
-    fat32_read(0x03, name, sizeof(char) * 8);
+	fat32_read(0x03, name, sizeof(char) * 8);
 	name[8] = 0;
-	printf("System name: %s\n",name);
+	printf("System name: %s\n", name);
 
-    fat32_read(0x0B, &value, sizeof(value));
+	fat32_read(0x0B, &value, sizeof(value));
 	printf("Sector Size: %d\n", value);
 
-	read(fd, &small_value, sizeof (small_value));
+	read(fd, &small_value, sizeof(small_value));
 	printf("Sectors per Cluster: %d\n", small_value);
 
-	read(fd, &value, sizeof (value));
+	read(fd, &value, sizeof(value));
 	printf("Reserved Sectors: %d\n", value);
 
-	read(fd, &small_value, sizeof (small_value));
+	read(fd, &small_value, sizeof(small_value));
 	printf("Number of FATs: %d\n", small_value);
 
-    fat32_read(0x24, &big_value, sizeof(big_value));
+	fat32_read(0x24, &big_value, sizeof(big_value));
 	printf("Maximum Root Entries: %d\n", big_value);
 
-    fat32_read(0x16, &value, sizeof(value));
+	fat32_read(0x16, &value, sizeof(value));
 	printf("Sectors per FAT: %d\n", value);
 
-    fat32_read(0x47, name, sizeof(char) * 11);
+	fat32_read(0x47, name, sizeof(char) * 11);
 	name[11] = 0;
-	printf("Label: %s\n\n",name);
+	printf("Label: %s\n\n", name);
 }
 
 //Pre: out es mínimo un array de 6 caracteres
@@ -186,14 +186,14 @@ char *read_at(unsigned int offset, char *out) {
 
 void ext4_get_structure() {
 
-    read_with_offset(0x18, &(ext4.block.size), sizeof(uint32_t));
+	read_with_offset(0x18, &(ext4.block.size), sizeof(uint32_t));
 	ext4.block.size = (uint32_t) pow(2, 10 + ext4.block.size);
 
-    //low
+	//low
 	uint32_t low;
-    read_with_offset(ext4.block.size + 0x08, &low, sizeof low);
+	read_with_offset(ext4.block.size + 0x08, &low, sizeof low);
 
-    //high
+	//high
 	uint32_t high;
 	read_with_offset(ext4.block.size + 0x28, &high, sizeof high);
 
@@ -220,62 +220,62 @@ void fat32_get_structure() {
 	fat32_read(0x24, &(fat32.sectors_per_fat), sizeof fat32.sectors_per_fat);
 	fat32_read(0x2C, &(fat32.root_first_cluster), sizeof fat32.root_first_cluster);
 
-    fat32.fat_location = (uint32_t) (fat32.bytes_per_sector * (fat32.reserved_sectors));
+	fat32.fat_location = (uint32_t) (fat32.bytes_per_sector * (fat32.reserved_sectors));
 
-    fat32.first_cluster = fat32.fat_location + fat32.sectors_per_fat * fat32.bytes_per_sector * 2;
+	fat32.first_cluster = fat32.fat_location + fat32.sectors_per_fat * fat32.bytes_per_sector * 2;
 }
 
 
-void fat32_file_info(off_t off){
+void fat32_file_info(off_t off) {
 
 	fat32_directory fat32_directory;
 	uint32_t year, month, day;
 
-	lseek(fd,off,SEEK_SET);
-	read(fd,&fat32_directory, sizeof(fat32_directory));
+	lseek(fd, off, SEEK_SET);
+	read(fd, &fat32_directory, sizeof(fat32_directory));
 
 	printf("\nFile Found! Size: %d bytes.\t", fat32_directory.size);
 
 	year = (uint32_t) 1980 + ((fat32_directory.created_date & 0xFE00) >> 9);
-	month = (uint32_t)(fat32_directory.created_date & 0x1E0) >> 5;
-	day = (uint32_t)(fat32_directory.created_date & 0x1F);
+	month = (uint32_t) (fat32_directory.created_date & 0x1E0) >> 5;
+	day = (uint32_t) (fat32_directory.created_date & 0x1F);
 	printf("Created on: %.2d/%.2d/%d\n", day, month, year);
 
 }
 
 
-void ext4_inode_info(uint32_t inode){
+void ext4_inode_info(uint32_t inode) {
 
-	if(!inode){
+	if (!inode) {
 		printf("\nError: File not found\n");
 		return;
 	}
 
-	off_t offset = lseek( fd, 0, SEEK_CUR );
+	off_t offset = lseek(fd, 0, SEEK_CUR);
 
 	uint32_t read_32 = 0;
 	uint32_t read_64 = 0;
 
 	lseek(fd, ext4.inode.table_loc * ext4.block.size + (ext4.inode.size * (inode - 1)), SEEK_SET);
 
-	lseek(fd,0x6C,SEEK_CUR);
-	read(fd,&read_32, sizeof(read_32));
+	lseek(fd, 0x6C, SEEK_CUR);
+	read(fd, &read_32, sizeof(read_32));
 	read_64 = ((read_64 | read_32 << 32));
 
-	lseek(fd,-0x6C,SEEK_CUR);
-	read(fd,&read_32, sizeof(read_32));
+	lseek(fd, -0x6C, SEEK_CUR);
+	read(fd, &read_32, sizeof(read_32));
 	read_64 = ((read_64 | read_32));
 
 	printf("\nFile Found! Size: %d bytes.\t", read_64);
 
-	lseek(fd,0x88,SEEK_CUR);
-	read(fd,&read_32, sizeof(read_32));
+	lseek(fd, 0x88, SEEK_CUR);
+	read(fd, &read_32, sizeof(read_32));
 
 	time_t t = read_32;
-	struct tm* tm_info = localtime(&t);
-	printf("Created on: %.2d/%.2d/%d\n", tm_info->tm_mday,tm_info->tm_mon, 1900 + tm_info->tm_year);
+	struct tm *tm_info = localtime(&t);
+	printf("Created on: %.2d/%.2d/%d\n", tm_info->tm_mday, tm_info->tm_mon, 1900 + tm_info->tm_year);
 
 
-	lseek( fd, offset, SEEK_SET );
+	lseek(fd, offset, SEEK_SET);
 
 }

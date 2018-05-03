@@ -2,8 +2,8 @@
 // Created by gabriel on 17/04/18.
 //
 
+#include <stdlib.h>
 #include "../include/search.h"
-#include "../include/info.h"
 
 uint32_t _ext4(char show, char *name, uint32_t inode);
 
@@ -21,23 +21,26 @@ void _fat32(char show, char *name);
 
 off_t _deepsearch_fat32(char *name, uint32_t position);
 
+char *convert_UCS2_ASCII(uint16_t *in, char *out, int size);
 
 
 
-void search(char show,char *name) {
+
+
+void search(char show, char *name) {
 
 	switch (detecta_tipo()) {
 		case EXT4:
 
 			ext4_get_structure();
 
-			if (!show){
+			if (!show) {
 
 				ext4_inode_info(_ext4(show, name, 2));
 
-			}else{
+			} else {
 
-				if(_ext4(show, name, 2) == NOT_FOUND){
+				if (_ext4(show, name, 2) == NOT_FOUND) {
 
 					printf("\nError: File not found\n");
 
@@ -49,7 +52,7 @@ void search(char show,char *name) {
 
 			fat32_get_structure();
 
-			_fat32(show,name);
+			_fat32(show, name);
 
 			break;
 		default:
@@ -294,25 +297,23 @@ uint64_t _deepshow_leaf_ext4(uint64_t size, uint16_t eh_entries) {
 
 }
 
-char *convert_UCS2_ASCII(uint16_t *in, char *out, int size);
-
 void _fat32(char show, char *name) {
 
 	off_t off;
 
-	if((off = _deepsearch_fat32(name,0)) == NOT_FOUND){
+	if ((off = _deepsearch_fat32(name, 0)) == NOT_FOUND) {
 
 		printf("\nError: File not found\n");
 
-	}else{
+	} else {
 
-		if(show){
+		if (show) {
 
 			printf("\nFile found! Showing content...\n\n");
 
 			_deepshow_fat32(off);
 
-		}else{
+		} else {
 
 			fat32_file_info(off);
 
@@ -323,57 +324,62 @@ void _fat32(char show, char *name) {
 
 }
 
-void _deepshow_fat32(off_t off){
+void _deepshow_fat32(off_t off) {
 
 	fat32_directory fat32_directory;
 	int i, position;
 	char buff;
 	uint32_t read_32;
 
-	lseek(fd,off,SEEK_SET);
-	read(fd,&fat32_directory, sizeof(fat32_directory));
+	lseek(fd, off, SEEK_SET);
+	read(fd, &fat32_directory, sizeof(fat32_directory));
 
-	position = CLUSTER(fat32_directory.cluster_high,fat32_directory.cluster_low);
+	position = CLUSTER(fat32_directory.cluster_high, fat32_directory.cluster_low);
 
-	lseek(fd,(fat32.first_cluster + ((fat32.bytes_per_sector * fat32.sectors_per_cluster) * position)),SEEK_SET);
+	lseek(fd, (fat32.first_cluster + ((fat32.bytes_per_sector * fat32.sectors_per_cluster) * position)), SEEK_SET);
 
-	read(fd,&buff, sizeof(char));
+	read(fd, &buff, sizeof(char));
 
-	for(i = 0; i < fat32_directory.size; i++){
+	for (i = 0; i < fat32_directory.size; i++) {
 
-		printf("%c",buff);
-		read(fd,&buff, sizeof(char));
-		if(buff == 0)break;
+		printf("%c", buff);
+		read(fd, &buff, sizeof(char));
 
-		if(i == (fat32.bytes_per_sector * fat32.sectors_per_cluster)){
+		if (buff == 0)break;
+
+		if (!(i % (fat32.bytes_per_sector * fat32.sectors_per_cluster)) && i) {
 
 			lseek(fd, fat32.fat_location + 8 + (position * 4), SEEK_SET);
 			read(fd, &read_32, sizeof read_32);
 
-			if(read_32 > 0xFFFFFF7)break;
+			if (read_32 > 0xFFFFFF7)break;
 
-			lseek(fd, fat32.first_cluster + (read_32 * (fat32.bytes_per_sector * fat32.sectors_per_cluster)), SEEK_SET);
+			read_32 -= 2;
+
+			lseek(fd, fat32.first_cluster + ((read_32) * (fat32.bytes_per_sector * fat32.sectors_per_cluster)), SEEK_SET);
 
 			position = read_32;
+
+			read(fd, &buff, sizeof(char));
 
 		}
 
 	}
 }
 
-void _longname_fat32(char *name, uint8_t num){
+void _longname_fat32(char *name, uint8_t num) {
 
 	int i = 0;
 	fat32_vfat vfat;
 	char out[15];
 
-	for(;i < num; i++){
+	for (; i < num; i++) {
 
-		memset(&vfat,0, sizeof(vfat));
+		memset(&vfat, 0, sizeof(vfat));
 		read(fd, &vfat, sizeof vfat);
 
-		if(vfat.attribute != 0xF){
-			lseek(fd, -sizeof(vfat),SEEK_CUR);
+		if (vfat.attribute != 0xF) {
+			lseek(fd, -sizeof(vfat), SEEK_CUR);
 			return;
 		}
 
@@ -387,7 +393,7 @@ void _longname_fat32(char *name, uint8_t num){
 
 }
 
-off_t _deepsearch_fat32(char *name, uint32_t position){
+off_t _deepsearch_fat32(char *name, uint32_t position) {
 
 	int i;
 	fat32_directory fat32_dir;
@@ -398,11 +404,11 @@ off_t _deepsearch_fat32(char *name, uint32_t position){
 	char out[15];
 	memset(out, 0, 15);
 
-	char final_name[100];
+	char final_name[MAX_NAME];
 
 	off_t offset = lseek(fd, 0, SEEK_CUR); //Guardar posicion puntero antes de modificarlo
 
-	lseek(fd, (fat32.first_cluster + ((fat32.bytes_per_sector * fat32.sectors_per_cluster) * position)) , SEEK_SET);
+	lseek(fd, (fat32.first_cluster + ((fat32.bytes_per_sector * fat32.sectors_per_cluster) * position)), SEEK_SET);
 
 	do {
 
@@ -418,30 +424,31 @@ off_t _deepsearch_fat32(char *name, uint32_t position){
 
 				lseek(fd, -sizeof(fat32_dir), SEEK_CUR);
 
-				memset(&vfat,0, sizeof(vfat));
+				memset(&vfat, 0, sizeof(vfat));
 
 				read(fd, &vfat, sizeof vfat);
 
-				memset(final_name,0,100);
+				memset(final_name, 0, MAX_NAME);
 
 				strcpy(final_name, convert_UCS2_ASCII(vfat.name, out, 5));
 				strcat(final_name, convert_UCS2_ASCII(vfat.name2, out, 6));
 				strcat(final_name, convert_UCS2_ASCII(vfat.name3, out, 2));
 
-				if(vfat.sequence & 0x40){
+				if (vfat.sequence & 0x40) {
 
 					_longname_fat32(final_name, (vfat.sequence & 0xBF) - 1);
 
 				}
 
 
-			}else{
+			} else {
 
 				if (fat32_dir.attribute == 0x10) {
 
-					if(fat32_dir.short_name[0] != '.' && fat32_dir.short_name[1] != '.'){
+					if (fat32_dir.short_name[0] != '.' && fat32_dir.short_name[1] != '.') {
 
-						if((return_value = _deepsearch_fat32(name, CLUSTER(fat32_dir.cluster_high,fat32_dir.cluster_low))) != NOT_FOUND){
+						if ((return_value = _deepsearch_fat32(name, CLUSTER(fat32_dir.cluster_high,
+																			fat32_dir.cluster_low))) != NOT_FOUND) {
 							return return_value;
 						}
 
@@ -451,14 +458,14 @@ off_t _deepsearch_fat32(char *name, uint32_t position){
 
 					if (!strcmp(name, final_name)) {
 
-						lseek(fd, -sizeof(fat32_dir),SEEK_CUR);
-						return lseek(fd,0,SEEK_CUR);
+						lseek(fd, -sizeof(fat32_dir), SEEK_CUR);
+						return lseek(fd, 0, SEEK_CUR);
 
 					}
 
 				}
 
-				memset(final_name,0,100);
+				memset(final_name, 0, MAX_NAME);
 
 			}
 
@@ -468,11 +475,15 @@ off_t _deepsearch_fat32(char *name, uint32_t position){
 		lseek(fd, fat32.fat_location + 8 + (position * 4), SEEK_SET);
 		read(fd, &read_32, sizeof read_32);
 
-		if(read_32 > 0xFFFFFF7)break;
+		if (read_32 > 0xFFFFFF7)break;
 
-		lseek(fd, fat32.first_cluster + (read_32 * (fat32.bytes_per_sector * fat32.sectors_per_cluster)), SEEK_SET);
+		read_32 -= 2;
 
-	}while(read_32);
+		lseek(fd, fat32.first_cluster + ((read_32) * (fat32.bytes_per_sector * fat32.sectors_per_cluster)), SEEK_SET);
+
+		position = read_32;
+
+	} while (read_32);
 
 	lseek(fd, offset, SEEK_SET); //Volver a poner el puntero en la posicion inicial para la llamada recursiva
 

@@ -6,8 +6,9 @@
 #define RAGNAROK_SEARCH_H
 
 #include "info.h"
-#include <stdlib.h>
+
 #define NOT_FOUND 0
+#define MAX_NAME 256
 #define CLUSTER(h, l) (((((uint32_t) (h)) << 16) | ((l))) - 2)
 
 typedef struct __attribute__((packed)) {
@@ -70,7 +71,7 @@ typedef struct __attribute__((packed)) {
 	uint16_t name3[2];
 } fat32_vfat;
 
-void search(char show,char *name);
+void search(char show, char *name);
 
 
 #endif //RAGNAROK_SEARCH_H
