@@ -83,6 +83,8 @@ void ext4_get_structure();
 
 void ext4_inode_info(uint32_t inode);
 
+void fat32_file_info(off_t off);
+
 void fat32_get_structure();
 
 #endif //RAGNAROK_OPERATION_H

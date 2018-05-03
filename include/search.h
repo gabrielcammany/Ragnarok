@@ -6,8 +6,8 @@
 #define RAGNAROK_SEARCH_H
 
 #include "info.h"
-#define FOUND 1
 #define NOT_FOUND 0
+#define CLUSTER(h, l) (((((uint32_t) (h)) << 16) | ((l))) - 2)
 
 typedef struct __attribute__((packed)) {
 	uint16_t eh_magic;
@@ -39,13 +39,23 @@ typedef struct __attribute__((packed)) {
 } ext4_dir_entry_2;
 
 typedef struct __attribute__((packed)) {
-	char short_name[11];
+
+	char short_name[8];
+	char file_extension[3];
 	uint8_t attribute;
-	uint64_t caca;
+
+	uint8_t user_attribute;
+	uint8_t created_time_ms;
+	uint16_t created_time;
+	uint16_t created_date;
+	uint16_t access_date;
+
 	uint16_t cluster_high;
-	uint32_t caca2;
+	uint16_t last_modification_time;
+	uint16_t last_modification_date;
 	uint16_t cluster_low;
 	uint32_t size;
+
 } fat32_directory;
 
 typedef struct __attribute__((packed)) {
@@ -59,7 +69,7 @@ typedef struct __attribute__((packed)) {
 	uint16_t name3[2];
 } fat32_vfat;
 
+void search(char show,char *name);
 
-void search(char show, char *name);
 
 #endif //RAGNAROK_SEARCH_H

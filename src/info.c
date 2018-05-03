@@ -4,6 +4,7 @@
 
 
 #include "../include/info.h"
+#include "../include/search.h"
 
 const char *const NAMES[] = {"EXT2", "EXT3", "EXT4", "FAT12", "FAT16", "FAT32", "UNKNOWN"};
 
@@ -220,8 +221,28 @@ void fat32_get_structure() {
 	fat32_read(0x2C, &(fat32.root_first_cluster), sizeof fat32.root_first_cluster);
 
     fat32.fat_location = (uint32_t) (fat32.bytes_per_sector * (fat32.reserved_sectors));
+
     fat32.first_cluster = fat32.fat_location + fat32.sectors_per_fat * fat32.bytes_per_sector * 2;
 }
+
+
+void fat32_file_info(off_t off){
+
+	fat32_directory fat32_directory;
+	uint32_t year, month, day;
+
+	lseek(fd,off,SEEK_SET);
+	read(fd,&fat32_directory, sizeof(fat32_directory));
+
+	printf("\nFile Found! Size: %d bytes.\t", fat32_directory.size);
+
+	year = (uint32_t) 1980 + ((fat32_directory.created_date & 0xFE00) >> 9);
+	month = (uint32_t)(fat32_directory.created_date & 0x1E0) >> 5;
+	day = (uint32_t)(fat32_directory.created_date & 0x1F);
+	printf("Created on: %.2d/%.2d/%d\n", day, month, year);
+
+}
+
 
 void ext4_inode_info(uint32_t inode){
 
