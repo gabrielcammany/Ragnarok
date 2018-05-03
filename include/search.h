@@ -6,6 +6,7 @@
 #define RAGNAROK_SEARCH_H
 
 #include "info.h"
+#include <stdlib.h>
 #define NOT_FOUND 0
 #define CLUSTER(h, l) (((((uint32_t) (h)) << 16) | ((l))) - 2)
 

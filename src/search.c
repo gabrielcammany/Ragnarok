@@ -2,8 +2,8 @@
 // Created by gabriel on 17/04/18.
 //
 
-#include <stdlib.h>
 #include "../include/search.h"
+#include "../include/info.h"
 
 uint32_t _ext4(char show, char *name, uint32_t inode);
 
@@ -24,8 +24,6 @@ off_t _deepsearch_fat32(char *name, uint32_t position);
 
 
 
-
-
 void search(char show,char *name) {
 
 	switch (detecta_tipo()) {
@@ -33,13 +31,18 @@ void search(char show,char *name) {
 
 			ext4_get_structure();
 
-			if (!show)
+			if (!show){
 
 				ext4_inode_info(_ext4(show, name, 2));
 
-			else
+			}else{
 
-				_ext4(show, name, 2);
+				if(_ext4(show, name, 2) == NOT_FOUND){
+
+					printf("\nError: File not found\n");
+
+				}
+			}
 
 			break;
 		case FAT32:
@@ -83,10 +86,6 @@ uint32_t _ext4(char show, char *name, uint32_t inode) {
 			printf("\nFile found! Showing content...\n\n");
 
 			_ext4(2, NULL, return_value);
-
-		}else{
-
-			printf("\nError: File not found\n");
 
 		}
 
@@ -159,7 +158,7 @@ uint32_t _deepsearch_tree_ext4(char *name, uint16_t eh_entries) {
 
 uint32_t _deepsearch_leaf_ext4(char *name, uint16_t eh_entries) {
 
-	int i;
+	unsigned int i, bytes = 0;
 	size_t size;
 
 	ext4_extent *leaf;
@@ -178,6 +177,7 @@ uint32_t _deepsearch_leaf_ext4(char *name, uint16_t eh_entries) {
 		lseek(fd, read_64 * ext4.block.size, SEEK_SET);
 
 		read(fd, &dir_entry_2, sizeof(dir_entry_2));
+		bytes += sizeof(dir_entry_2);
 
 		do {
 
@@ -185,6 +185,7 @@ uint32_t _deepsearch_leaf_ext4(char *name, uint16_t eh_entries) {
 
 			file_name = (char *) calloc(size, size);
 			read(fd, file_name, size);
+			bytes += size;
 
 			if (!strcmp(file_name, name) && dir_entry_2.file_type == 1) {
 
@@ -209,8 +210,9 @@ uint32_t _deepsearch_leaf_ext4(char *name, uint16_t eh_entries) {
 
 			free(file_name);
 			read(fd, &dir_entry_2, sizeof(dir_entry_2));
+			bytes += sizeof(dir_entry_2);
 
-		} while (dir_entry_2.inode != 0);
+		} while (dir_entry_2.inode != 0 && (leaf[i].ee_len * ext4.block.size) > bytes);
 
 	}
 
@@ -493,9 +495,3 @@ char *convert_UCS2_ASCII(uint16_t *in, char *out, int size) {
 	out[i] = 0;
 	return out;
 }
-
-/*
-  3    2    1    0
-[   ][   ][   ][   ]
-[ ]  [ ]  [ ]  [ ]
- */

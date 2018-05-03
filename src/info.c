@@ -253,7 +253,6 @@ void ext4_inode_info(uint32_t inode){
 
 	off_t offset = lseek( fd, 0, SEEK_CUR );
 
-	uint32_t read_16 = 0;
 	uint32_t read_32 = 0;
 	uint32_t read_64 = 0;
 
