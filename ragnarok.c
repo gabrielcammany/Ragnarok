@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-    fd = open(argv[2], 0644, O_RDONLY);
+    fd = open(argv[2], 0666, O_RDONLY);
 
     if (fd < 0) {
         fprintf(stderr, "Error al abrir el fichero.\n");
@@ -64,16 +64,21 @@ int check_operation(int argc, char **argv) {
 	} else if (!strcmp(argv[1], SHOW)) {
 		if (argc != 4) return -1;
 		return O_SHOW;
-	} else if (!strcmp(argv[1], READ)) {
-
-	} else if (!strcmp(argv[1], WRITE)) {
-
+	} else if (!strcmp(argv[1], EN_READ_ONLY)) {
+        if (argc != 4) return -1;
+        return O_EN_READ_ONLY;
+	} else if (!strcmp(argv[1], DIS_READ_ONLY)) {
+        if (argc != 4) return -1;
+        return O_DIS_READ_ONLY;
 	} else if (!strcmp(argv[1], ENABLE_HIDE)) {
-
+        if (argc != 4) return -1;
+        return O_ENABLE_HIDE;
 	} else if (!strcmp(argv[1], DISABLE_HIDE)) {
-
+        if (argc != 4) return -1;
+        return O_DISABLE_HIDE;
 	} else if (!strcmp(argv[1], NEW_DATE)) {
-
+        if (argc != 5) return -1;
+        return O_NEW_DATE;
 	}
 	return 0;
 }

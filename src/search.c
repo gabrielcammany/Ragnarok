@@ -63,15 +63,47 @@ uint32_t search(char show, char *name) {
 void change_attr(int option, char *name, char *new_date) {
     int type = detecta_tipo();
     if (type == EXT4) {
+        ext4_get_structure();
 		uint32_t inode = _ext4(0, name, 2);
-		if (inode == NOT_FOUND) {
+        if (inode == NOT_FOUND) {
 			printf("Error: File not found.\n");
 		} else {
+            uint16_t mode;
+            uint64_t inode_loc = ext4.inode.table_loc * ext4.block.size + (ext4.inode.size * (inode - 1));
+            lseek(fd, inode_loc, SEEK_SET);
+
 			switch (option) {
 				case O_EN_READ_ONLY:
+                    read(fd, &mode, sizeof mode);
+                    //lseek(fd, 2, SEEK_CUR);
+                    printf("MODE: 0x%X\n", mode);
+                    uint32_t size;
+                    //read(fd, &size, sizeof size);
+                    printf("SIZE: 0x%X\n", size);
+                    mode &= ~((unsigned short) (0x02 | 0x10 | 0x80));
+                    lseek(fd, -sizeof mode, SEEK_CUR);
+                    write(fd, &mode, sizeof mode);
+					read(fd, &mode, sizeof mode);
+					printf("MODE: 0x%X\n", mode);
+                    printf("Se han editado los permisos => ahora es solo lectura\n");
 					break;
 				case O_DIS_READ_ONLY:
-					break;
+                    read(fd, &mode, sizeof mode);
+                    //lseek(fd, 2, SEEK_CUR);
+                    printf("MODE lectura 1: 0x%X\n", mode);
+                    uint32_t size2;
+                    //read(fd, &size2, sizeof size2);
+                    printf("SIZE: 0x%X\n", size2);
+
+                    mode |= (unsigned short) (0x02 | 0x10 | 0x80);
+					printf("MODE cambio: 0x%X\n", mode);
+                    lseek(fd, -sizeof mode, SEEK_CUR);
+					write(fd, &mode, sizeof mode);
+					lseek(fd, -sizeof mode, SEEK_CUR);
+					read(fd, &mode, sizeof mode);
+					printf("MODE lectura 2: 0x%X\n", mode);
+                    printf("Se han editado los permisos => ahora se puede escribir\n");
+                    break;
 				case O_NEW_DATE:
 					break;
 				default:
@@ -80,7 +112,8 @@ void change_attr(int option, char *name, char *new_date) {
 			}
 		}
     } else if (type == FAT32) {
-		off_t off = _fat32(0, name);
+        fat32_get_structure();
+        off_t off = _fat32(0, name);
 		if  (off != NOT_FOUND) { //retrocompatibilidad
 			switch (option) {
 				case O_EN_READ_ONLY:
