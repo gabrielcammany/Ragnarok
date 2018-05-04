@@ -14,6 +14,15 @@
 #include <math.h>
 #include <time.h>
 
+#define INFO "-info"
+#define SEARCH "-search"
+#define SHOW "-show"
+#define READ "-r"
+#define WRITE "-w"
+#define ENABLE_HIDE "-h"
+#define DISABLE_HIDE "-s"
+#define NEW_DATE "-d"
+
 #define FAT12_NAME "FAT12"
 #define FAT16_NAME "FAT16"
 #define FAT32_NAME "FAT32"
@@ -28,6 +37,17 @@ enum {
 	FAT16,
 	FAT32,
 	UNKNOWN
+};
+
+enum {
+	O_INFO,
+	O_SEARCH,
+	O_SHOW,
+	O_EN_READ_ONLY,
+	O_DIS_READ_ONLY,
+	O_ENABLE_HIDE,
+	O_DISABLE_HIDE,
+	O_NEW_DATE
 };
 
 typedef struct __attribute__((packed)) {

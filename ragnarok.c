@@ -3,26 +3,6 @@
 #include "include/info.h"
 #include "include/search.h"
 
-#define INFO "-info"
-#define SEARCH "-search"
-#define SHOW "-show"
-#define READ "-r"
-#define WRITE "-w"
-#define ENABLE_HIDE "-h"
-#define DISABLE_HIDE "-h"
-#define NEW_DATE "-d"
-
-enum {
-    O_INFO,
-    O_SEARCH,
-    O_SHOW,
-    O_READ,
-    O_WRITE,
-    O_ENABLE_HIDE,
-    O_DISABLE_HIDE,
-    O_NEW_DATE
-};
-
 int check_operation(int argc, char **argv);
 
 int main(int argc, char **argv) {
@@ -50,15 +30,20 @@ int main(int argc, char **argv) {
         case O_SHOW:
 			search(1,argv[3]);
             break;
-        case O_READ:
+        case O_EN_READ_ONLY: //TODO change_attr(type, argv[3], NULL) y juntar los casos del switch
+            change_attr(O_EN_READ_ONLY, argv[3], NULL);
             break;
-        case O_WRITE:
+        case O_DIS_READ_ONLY:
+            change_attr(O_DIS_READ_ONLY, argv[3], NULL);
             break;
         case O_ENABLE_HIDE:
+            change_attr(O_ENABLE_HIDE, argv[3], NULL);
             break;
         case O_DISABLE_HIDE:
+            change_attr(O_DISABLE_HIDE, argv[3], NULL);
             break;
         case O_NEW_DATE:
+            change_attr(O_NEW_DATE, argv[3], argv[4]);
             break;
     }
 

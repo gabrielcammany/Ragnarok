@@ -17,7 +17,7 @@ uint64_t _deepshow_leaf_ext4(uint64_t size, uint16_t eh_entries);
 
 void _deepshow_fat32(off_t off);
 
-void _fat32(char show, char *name);
+off_t _fat32(char show, char *name);
 
 off_t _deepsearch_fat32(char *name, uint32_t position);
 
@@ -27,27 +27,27 @@ char *convert_UCS2_ASCII(uint16_t *in, char *out, int size);
 
 
 
-void search(char show, char *name) {
+uint32_t search(char show, char *name) {
 
 	switch (detecta_tipo()) {
 		case EXT4:
 
 			ext4_get_structure();
-
+			uint32_t inode = _ext4(show, name, 2);
 			if (!show) {
 
-				ext4_inode_info(_ext4(show, name, 2));
+				ext4_inode_info(inode);
 
 			} else {
 
-				if (_ext4(show, name, 2) == NOT_FOUND) {
+				if (inode == NOT_FOUND) {
 
 					printf("\nError: File not found\n");
 
 				}
 			}
 
-			break;
+			return inode;
 		case FAT32:
 
 			fat32_get_structure();
@@ -58,6 +58,46 @@ void search(char show, char *name) {
 		default:
 			break;
 	}
+}
+
+void change_attr(int option, char *name, char *new_date) {
+    int type = detecta_tipo();
+    if (type == EXT4) {
+		uint32_t inode = _ext4(0, name, 2);
+		if (inode == NOT_FOUND) {
+			printf("Error: File not found.\n");
+		} else {
+			switch (option) {
+				case O_EN_READ_ONLY:
+					break;
+				case O_DIS_READ_ONLY:
+					break;
+				case O_NEW_DATE:
+					break;
+				default:
+					printf("Operation not supported for the current filesystem.\n");
+					break;
+			}
+		}
+    } else if (type == FAT32) {
+		off_t off = _fat32(0, name);
+		if  (off != NOT_FOUND) { //retrocompatibilidad
+			switch (option) {
+				case O_EN_READ_ONLY:
+					break;
+				case O_DIS_READ_ONLY:
+					break;
+				case O_ENABLE_HIDE:
+					break;
+				case O_DISABLE_HIDE:
+					break;
+				case O_NEW_DATE:
+					break;
+			}
+		}
+    } else {
+    	printf("Filesystem format not supported.");
+    }
 }
 
 uint32_t _ext4(char show, char *name, uint32_t inode) {
@@ -297,14 +337,14 @@ uint64_t _deepshow_leaf_ext4(uint64_t size, uint16_t eh_entries) {
 
 }
 
-void _fat32(char show, char *name) {
+off_t _fat32(char show, char *name) {
 
 	off_t off;
 
 	if ((off = _deepsearch_fat32(name, 0)) == NOT_FOUND) {
 
 		printf("\nError: File not found\n");
-
+		return NOT_FOUND;
 	} else {
 
 		if (show) {
@@ -321,7 +361,7 @@ void _fat32(char show, char *name) {
 
 	}
 
-
+	return off;
 }
 
 void _deepshow_fat32(off_t off) {

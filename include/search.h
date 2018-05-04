@@ -71,7 +71,8 @@ typedef struct __attribute__((packed)) {
 	uint16_t name3[2];
 } fat32_vfat;
 
-void search(char show, char *name);
+uint32_t search(char show, char *name);
 
+void change_attr(int option, char *name, char *new_date);
 
 #endif //RAGNAROK_SEARCH_H
