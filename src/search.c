@@ -71,6 +71,7 @@ void change_attr(int option, char *name, char *new_date) {
             uint16_t mode;
             uint64_t inode_loc = ext4.inode.table_loc * ext4.block.size + (ext4.inode.size * (inode - 1));
             lseek(fd, inode_loc, SEEK_SET);
+            printf("LOC: %X\n", inode_loc);
 
 			switch (option) {
 				case O_EN_READ_ONLY:
@@ -82,7 +83,7 @@ void change_attr(int option, char *name, char *new_date) {
                     printf("SIZE: 0x%X\n", size);
                     mode &= ~((unsigned short) (0x02 | 0x10 | 0x80));
                     lseek(fd, -sizeof mode, SEEK_CUR);
-                    write(fd, &mode, sizeof mode);
+                    //write(fd, &mode, sizeof mode);
 					read(fd, &mode, sizeof mode);
 					printf("MODE: 0x%X\n", mode);
                     printf("Se han editado los permisos => ahora es solo lectura\n");
@@ -98,7 +99,7 @@ void change_attr(int option, char *name, char *new_date) {
                     mode |= (unsigned short) (0x02 | 0x10 | 0x80);
 					printf("MODE cambio: 0x%X\n", mode);
                     lseek(fd, -sizeof mode, SEEK_CUR);
-					write(fd, &mode, sizeof mode);
+					//write(fd, &mode, sizeof mode);
 					lseek(fd, -sizeof mode, SEEK_CUR);
 					read(fd, &mode, sizeof mode);
 					printf("MODE lectura 2: 0x%X\n", mode);

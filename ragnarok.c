@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-    fd = open(argv[2], 0666, O_RDONLY);
+    fd = open(argv[2], 0666, O_RDWR);
 
     if (fd < 0) {
         fprintf(stderr, "Error al abrir el fichero.\n");
