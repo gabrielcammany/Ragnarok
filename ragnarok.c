@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-    fd = open(argv[2], 0666, O_RDWR);
+    fd = open(argv[argc == 5 ? 3 : 2], 0666, O_RDWR);
 
     if (fd < 0) {
         fprintf(stderr, "Error al abrir el fichero.\n");
@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
             change_attr(O_DISABLE_HIDE, argv[3], NULL);
             break;
         case O_NEW_DATE:
-            change_attr(O_NEW_DATE, argv[3], argv[4]);
+            change_attr(O_NEW_DATE, argv[4], argv[2]);
             break;
     }
 

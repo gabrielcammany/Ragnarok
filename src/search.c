@@ -25,8 +25,6 @@ char *convert_UCS2_ASCII(uint16_t *in, char *out, int size);
 
 
 
-
-
 uint32_t search(char show, char *name) {
 
 	switch (detecta_tipo()) {
@@ -61,51 +59,52 @@ uint32_t search(char show, char *name) {
 }
 
 void change_attr(int option, char *name, char *new_date) {
+
     int type = detecta_tipo();
     if (type == EXT4) {
         ext4_get_structure();
 		uint32_t inode = _ext4(0, name, 2);
+
         if (inode == NOT_FOUND) {
+
 			printf("Error: File not found.\n");
+
 		} else {
             uint16_t mode;
             uint64_t inode_loc = ext4.inode.table_loc * ext4.block.size + (ext4.inode.size * (inode - 1));
             lseek(fd, inode_loc, SEEK_SET);
-            printf("LOC: %X\n", inode_loc);
 
 			switch (option) {
 				case O_EN_READ_ONLY:
                     read(fd, &mode, sizeof mode);
-                    //lseek(fd, 2, SEEK_CUR);
-                    printf("MODE: 0x%X\n", mode);
-                    uint32_t size;
-                    //read(fd, &size, sizeof size);
-                    printf("SIZE: 0x%X\n", size);
                     mode &= ~((unsigned short) (0x02 | 0x10 | 0x80));
                     lseek(fd, -sizeof mode, SEEK_CUR);
-                    //write(fd, &mode, sizeof mode);
-					read(fd, &mode, sizeof mode);
-					printf("MODE: 0x%X\n", mode);
-                    printf("Se han editado los permisos => ahora es solo lectura\n");
+                    write(fd, &mode, sizeof mode);
 					break;
 				case O_DIS_READ_ONLY:
                     read(fd, &mode, sizeof mode);
-                    //lseek(fd, 2, SEEK_CUR);
-                    printf("MODE lectura 1: 0x%X\n", mode);
-                    uint32_t size2;
-                    //read(fd, &size2, sizeof size2);
-                    printf("SIZE: 0x%X\n", size2);
-
                     mode |= (unsigned short) (0x02 | 0x10 | 0x80);
-					printf("MODE cambio: 0x%X\n", mode);
                     lseek(fd, -sizeof mode, SEEK_CUR);
-					//write(fd, &mode, sizeof mode);
-					lseek(fd, -sizeof mode, SEEK_CUR);
-					read(fd, &mode, sizeof mode);
-					printf("MODE lectura 2: 0x%X\n", mode);
-                    printf("Se han editado los permisos => ahora se puede escribir\n");
+					write(fd, &mode, sizeof mode);
                     break;
 				case O_NEW_DATE:
+
+				    if(strlen(new_date) == 8){
+
+                        struct tm tm;
+                        time_t t = 0;
+						uint32_t read_32 = 0;
+                        memset(&tm, 0, sizeof(struct tm));
+
+						if(strptime(new_date, "%d%m%Y", &tm) != NULL){
+
+							t = (uint32_t )mktime(&tm);
+							lseek(fd, 0x90, SEEK_CUR);
+							write(fd, &t, sizeof (uint32_t));
+
+						}
+				    }
+
 					break;
 				default:
 					printf("Operation not supported for the current filesystem.\n");
@@ -135,9 +134,7 @@ void change_attr(int option, char *name, char *new_date) {
 }
 
 uint32_t _ext4(char show, char *name, uint32_t inode) {
-	uint32_t return_value = 0;
-	uint32_t read_32 = 0;
-	uint32_t read_64 = 0;
+    uint32_t return_value = 0;
 	ext4_extent_header header;
 
 	off_t offset = lseek(fd, 0, SEEK_CUR); //Guardar posicion puntero antes de modificarlo
@@ -167,6 +164,9 @@ uint32_t _ext4(char show, char *name, uint32_t inode) {
 		}
 
 	} else {
+
+        uint32_t read_64 = 0;
+        uint32_t read_32 = 0;
 
 		lseek(fd, -(0x28 + sizeof(header)), SEEK_CUR);
 
@@ -200,9 +200,7 @@ uint32_t _ext4(char show, char *name, uint32_t inode) {
 
 uint32_t _deepsearch_tree_ext4(char *name, uint16_t eh_entries) {
 	int i;
-	ext4_extent_header header;
 	ext4_extent_idx *leaf;
-	uint64_t read_64 = 0;
 	uint32_t return_value = 0;
 
 	leaf = (ext4_extent_idx *) malloc(sizeof(ext4_extent_idx) * eh_entries);
@@ -210,6 +208,9 @@ uint32_t _deepsearch_tree_ext4(char *name, uint16_t eh_entries) {
 	read(fd, leaf, sizeof(ext4_extent_idx) * eh_entries);
 
 	for (i = 0; i < eh_entries; i++) {
+
+        uint64_t read_64 = 0;
+        ext4_extent_header header;
 
 		read_64 = ((read_64 | leaf[i].ei_leaf_hi) << 32) | leaf[i].ei_leaf_lo;
 
