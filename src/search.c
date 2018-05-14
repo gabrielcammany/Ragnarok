@@ -115,14 +115,28 @@ void change_attr(int option, char *name, char *new_date) {
         fat32_get_structure();
         off_t off = _fat32(0, name);
 		if  (off != NOT_FOUND) { //retrocompatibilidad
+
+		    uint8_t attribute;
+		    lseek(fd, off + 11, SEEK_SET);
+		    read(fd, &attribute, sizeof attribute);
+		    lseek(fd, -1, SEEK_CUR);
+
 			switch (option) {
 				case O_EN_READ_ONLY:
+				    attribute |= 0x01;
+				    write(fd, &attribute, sizeof attribute);
 					break;
 				case O_DIS_READ_ONLY:
+				    attribute &= 0x01;
+					write(fd, &attribute, sizeof attribute);
 					break;
 				case O_ENABLE_HIDE:
+				    attribute |= 0x02;
+					write(fd, &attribute, sizeof attribute);
 					break;
 				case O_DISABLE_HIDE:
+				    attribute &= 0x02;
+					write(fd, &attribute, sizeof attribute);
 					break;
 				case O_NEW_DATE:
 					break;
