@@ -31,32 +31,64 @@ int detecta_tipo() {
 	uint16_t magic_number;
 	read(fd, &magic_number, sizeof magic_number);
 
-
 	if (magic_number == 0xEF53) {
+
 		lseek(fd, EXT4_OFFSET + 0x60, SEEK_SET);
 		uint32_t feature_compat;
 		read(fd, &feature_compat, sizeof feature_compat);
+
 		if (feature_compat & 0x40) {
+
 			return EXT4;
+
 		} else {
+
 			lseek(fd, EXT4_OFFSET + 0x5C, SEEK_SET);
 			read(fd, &feature_compat, sizeof feature_compat);
+
 			if (feature_compat & 0x04) {
+
 				return EXT3;
+
 			} else {
+
 				return EXT2;
+
 			}
 		}
 	} else {
 		//could possibly be a FAT filesystem
-		char fat_type[8];
-		if (strcmp(read_at(0x36, fat_type), FAT12_NAME) == 0) {
-			return FAT12;
-		} else if (strcmp(fat_type, FAT16_NAME) == 0) {
-			return FAT16;
-		} else if (strcmp(read_at(0x52, fat_type), FAT32_NAME) == 0) {
+		uint16_t read_16;
+
+		lseek(fd, 0x11, SEEK_SET);
+		read(fd, &read_16, sizeof (uint16_t));
+
+		if(!read_16){
+
 			return FAT32;
+
+		}else{
+
+			return FAT16;
+
 		}
+
+		/*
+		char fat_type[8];
+
+		if (strcmp(read_at(0x36, fat_type), FAT12_NAME) == 0) {
+
+			return FAT12;
+
+		} else if (strcmp(fat_type, FAT16_NAME) == 0) {
+
+			return FAT16;
+
+		} else if (strcmp(read_at(0x52, fat_type), FAT32_NAME) == 0) {
+
+			return FAT32;
+
+		}*/
 	}
 	return UNKNOWN;
 }
@@ -234,12 +266,20 @@ void fat32_file_info(off_t off) {
 	lseek(fd, off, SEEK_SET);
 	read(fd, &fat32_directory, sizeof(fat32_directory));
 
-	printf("\nFile Found! Size: %d bytes.\t", fat32_directory.size);
+	if(fat32_directory.attribute & 0x2){
 
-	year = (uint32_t) 1980 + ((fat32_directory.created_date & 0xFE00) >> 9);
-	month = (uint32_t) (fat32_directory.created_date & 0x1E0) >> 5;
-	day = (uint32_t) (fat32_directory.created_date & 0x1F);
-	printf("Created on: %.2d/%.2d/%d\n", day, month, year);
+		printf("\nError: File not found\n");
+
+	}else{
+
+		printf("\nFile Found! Size: %d bytes.\t", fat32_directory.size);
+
+		year = (uint32_t) 1980 + ((fat32_directory.created_date & 0xFE00) >> 9);
+		month = (uint32_t) (fat32_directory.created_date & 0x1E0) >> 5;
+		day = (uint32_t) (fat32_directory.created_date & 0x1F);
+		printf("Created on: %.2d/%.2d/%d\n", day, month, year);
+
+	}
 
 }
 

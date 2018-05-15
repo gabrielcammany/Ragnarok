@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include "../include/search.h"
 
+int depth = 0;
+
 uint32_t _ext4(char show, char *name, uint32_t inode);
 
 uint32_t _deepsearch_leaf_ext4(char *name, uint16_t eh_entries);
@@ -23,7 +25,7 @@ off_t _deepsearch_fat32(char *name, uint32_t position);
 
 char *convert_UCS2_ASCII(uint16_t *in, char *out, int size);
 
-
+void listFile(char *name);
 
 uint32_t search(char show, char *name) {
 
@@ -54,6 +56,7 @@ uint32_t search(char show, char *name) {
 
 			break;
 		default:
+			printf("\nFilesystem format not supported.\n");
 			break;
 	}
 }
@@ -61,7 +64,9 @@ uint32_t search(char show, char *name) {
 void change_attr(int option, char *name, char *new_date) {
 
     int type = detecta_tipo();
+
     if (type == EXT4) {
+
         ext4_get_structure();
 		uint32_t inode = _ext4(0, name, 2);
 
@@ -112,14 +117,16 @@ void change_attr(int option, char *name, char *new_date) {
 			}
 		}
     } else if (type == FAT32) {
+
         fat32_get_structure();
-        off_t off = _fat32(0, name);
+        off_t off = _deepsearch_fat32(name, 0);
+
 		if  (off != NOT_FOUND) { //retrocompatibilidad
 
 		    uint8_t attribute;
-		    lseek(fd, off + 11, SEEK_SET);
+		    lseek(fd, off + 0x0B, SEEK_SET);
 		    read(fd, &attribute, sizeof attribute);
-		    lseek(fd, -1, SEEK_CUR);
+		    lseek(fd, -sizeof (attribute), SEEK_CUR);
 
 			switch (option) {
 				case O_EN_READ_ONLY:
@@ -127,7 +134,7 @@ void change_attr(int option, char *name, char *new_date) {
 				    write(fd, &attribute, sizeof attribute);
 					break;
 				case O_DIS_READ_ONLY:
-				    attribute &= 0x01;
+				    attribute &= ~(0x01);
 					write(fd, &attribute, sizeof attribute);
 					break;
 				case O_ENABLE_HIDE:
@@ -135,15 +142,36 @@ void change_attr(int option, char *name, char *new_date) {
 					write(fd, &attribute, sizeof attribute);
 					break;
 				case O_DISABLE_HIDE:
-				    attribute &= 0x02;
+				    attribute &= ~(0x02);
 					write(fd, &attribute, sizeof attribute);
 					break;
 				case O_NEW_DATE:
+
+                    if(strlen(new_date) == 8){
+
+                        struct tm tm;
+                        time_t t = 0;
+                        uint32_t read_32 = 0;
+                        memset(&tm, 0, sizeof(struct tm));
+
+                        if(strptime(new_date, "%d%m%Y", &tm) != NULL){
+
+                            lseek(fd, off + 0x10, SEEK_SET);
+                            uint16_t date = 0;
+
+                            date = (uint16_t) ((tm.tm_mday & 0b11111) | (((tm.tm_mon + 1) & 0b1111) << 5) | (((tm.tm_year + 1900 - 1980) & 0b1111111) << 9));
+                            write(fd, &date, sizeof date);
+
+                        }
+                    }
+
 					break;
 			}
 		}
     } else {
-    	printf("Filesystem format not supported.");
+
+		printf("\nFilesystem format not supported.\n");
+
     }
 }
 
@@ -389,20 +417,22 @@ uint64_t _deepshow_leaf_ext4(uint64_t size, uint16_t eh_entries) {
 off_t _fat32(char show, char *name) {
 
 	off_t off;
+	depth = 0;
 
 	if ((off = _deepsearch_fat32(name, 0)) == NOT_FOUND) {
 
 		printf("\nError: File not found\n");
 		return NOT_FOUND;
+
 	} else {
 
-		if (show) {
+		if (show == 1) {
 
 			printf("\nFile found! Showing content...\n\n");
 
 			_deepshow_fat32(off);
 
-		} else {
+		} else if(!show){
 
 			fat32_file_info(off);
 
@@ -505,7 +535,11 @@ off_t _deepsearch_fat32(char *name, uint32_t position) {
 
 			read(fd, &fat32_dir, sizeof fat32_dir);
 
-			if (fat32_dir.short_name[0] == 0xEF)continue;
+			if (fat32_dir.short_name[0] == 0xE5){
+				memset(final_name, 0, MAX_NAME);
+				memset(&fat32_dir, 0, sizeof (fat32_dir));
+				continue;
+			}
 
 			if (fat32_dir.short_name[0] == 0)break;
 
@@ -525,25 +559,38 @@ off_t _deepsearch_fat32(char *name, uint32_t position) {
 
 				if (vfat.sequence & 0x40) {
 
-					_longname_fat32(final_name, (vfat.sequence & 0xBF) - 1);
+					_longname_fat32(final_name, (uint8_t) ((vfat.sequence & 0xBF) - 1));
 
 				}
 
 
 			} else {
 
-				if (fat32_dir.attribute == 0x10) {
+				if (fat32_dir.attribute & 0x10) {
 
-					if (fat32_dir.short_name[0] != '.' && fat32_dir.short_name[1] != '.') {
 
-						if ((return_value = _deepsearch_fat32(name, CLUSTER(fat32_dir.cluster_high,
+                    if (fat32_dir.short_name[0] != '.') {
+
+                        //depth++;
+
+                        //listFile(final_name);
+
+                        if ((return_value = _deepsearch_fat32(name, CLUSTER(fat32_dir.cluster_high,
 																			fat32_dir.cluster_low))) != NOT_FOUND) {
 							return return_value;
 						}
 
-					}
+                        //depth--;
 
-				} else if (fat32_dir.attribute == 0x20) {
+
+					}else{
+
+                        //listFile(fat32_dir.short_name);
+
+                    }
+
+
+				} else if (fat32_dir.attribute & 0x20){
 
 					if (!strcmp(name, final_name)) {
 
@@ -557,6 +604,8 @@ off_t _deepsearch_fat32(char *name, uint32_t position) {
 				memset(final_name, 0, MAX_NAME);
 
 			}
+
+			memset(&fat32_dir, 0, sizeof (fat32_dir));
 
 
 		}
@@ -594,4 +643,21 @@ char *convert_UCS2_ASCII(uint16_t *in, char *out, int size) {
 
 	out[i] = 0;
 	return out;
+}
+
+void listFile(char *name) {
+    int i;
+
+//	if (name[0] == '.') return;
+
+    if (depth)
+        printf("|");
+
+    for (i = 0; i < depth; i++) {
+        printf("  ");
+
+    }
+    printf("|-");
+    printf(name);
+    printf("\n");
 }
