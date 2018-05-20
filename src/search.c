@@ -425,7 +425,7 @@ uint64_t _deepshow_leaf_ext4(uint64_t size, uint16_t eh_entries) {
     uint64_t aux_size = 0;
     ext4_extent *leaf;
 
-    leaf = (ext4_extent *) calloc(eh_entries,sizeof(ext4_extent) * eh_entries);
+    leaf = (ext4_extent *) calloc(eh_entries, sizeof(ext4_extent) * eh_entries);
 
     read(fd, leaf, sizeof(ext4_extent) * eh_entries);
 
@@ -437,7 +437,7 @@ uint64_t _deepshow_leaf_ext4(uint64_t size, uint16_t eh_entries) {
 
         read_64 = 0;
 
-        if(leaf[i].ee_len > 32768){
+        if (leaf[i].ee_len > 32768) {
             continue;
         }
 
@@ -455,7 +455,7 @@ uint64_t _deepshow_leaf_ext4(uint64_t size, uint16_t eh_entries) {
         for (read_64 = 0; read_64 < aux_size; read_64++) {
 
             read(fd, &buff, sizeof(char));
-            if(buff == 0)break;
+            if (buff == 0)break;
             printf("%c", buff);
 
         }
@@ -592,7 +592,7 @@ off_t _deepsearch_fat32(char *name, uint32_t position) {
             read(fd, &fat32_dir, sizeof fat32_dir);
 
             if (fat32_dir.short_name[0] == 0xE5 ||
-                    fat32_dir.short_name[0] == 0x2E) {
+                fat32_dir.short_name[0] == 0x2E) {
 
                 memset(&fat32_dir, 0, sizeof(fat32_dir));
                 continue;
@@ -627,15 +627,15 @@ off_t _deepsearch_fat32(char *name, uint32_t position) {
                 if (fat32_dir.attribute & 0x10) {
 
                     if (fat32_dir.short_name[0] != '.'
-                            && fat32_dir.short_name[1] != '.') {
+                        && fat32_dir.short_name[1] != '.') {
 
 #ifdef SEARCH_DEBUG
                         listFile(final_name);
 #endif
 
 
-                        if(CLUSTER(fat32_dir.cluster_high,
-                                   fat32_dir.cluster_low) != position){
+                        if (CLUSTER(fat32_dir.cluster_high,
+                                    fat32_dir.cluster_low) != position) {
 
 #ifdef SEARCH_DEBUG
                             depth++;
