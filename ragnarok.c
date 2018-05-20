@@ -16,7 +16,9 @@ int main(int argc, char **argv) {
     fd = open(argv[argc == 5 ? 3 : 2], 0666, O_RDWR);
 
     if (fd < 0) {
+
         fprintf(stderr, "Error al abrir el fichero.\n");
+
         return -1;
     }
 

@@ -218,16 +218,34 @@ char *read_at(unsigned int offset, char *out) {
 
 void ext4_get_structure() {
 
+
 	read_with_offset(0x18, &(ext4.block.size), sizeof(uint32_t));
 	ext4.block.size = (uint32_t) pow(2, 10 + ext4.block.size);
 
-	//low
-	uint32_t low;
-	read_with_offset(ext4.block.size + 0x08, &low, sizeof low);
+    uint32_t low;
+    uint32_t high;
 
-	//high
-	uint32_t high;
-	read_with_offset(ext4.block.size + 0x28, &high, sizeof high);
+	if(ext4.block.size > EXT4_OFFSET){
+
+        //low
+        lseek(fd,ext4.block.size + 0x08, SEEK_SET);
+        read(fd,&(low),sizeof(low));
+
+
+        //high
+        lseek(fd,ext4.block.size + 0x28, SEEK_SET);
+        read(fd,&(high),sizeof(high));
+
+	}else{
+
+        //low
+        read_with_offset(ext4.block.size + 0x08, &low, sizeof low);
+
+
+        //high
+        read_with_offset(ext4.block.size + 0x28, &high, sizeof high);
+
+	}
 
 	ext4.inode.table_loc = (((uint64_t) (high)) << 32) | low;
 
