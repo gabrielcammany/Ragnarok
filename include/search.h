@@ -7,8 +7,6 @@
 
 #include "info.h"
 
-#define _XOPEN_SOURCE       /* See feature_test_macros(7) */
-
 #include <time.h>
 
 #define NOT_FOUND 0

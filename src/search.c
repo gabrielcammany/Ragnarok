@@ -6,8 +6,8 @@
 #include "../include/search.h"
 #include "../include/info.h"
 
-//#define SHOW_DEBUG
-//#define SEARCH_DEBUG
+#define SHOW_DEBUG
+#define SEARCH_DEBUG
 
 #ifdef SEARCH_DEBUG
 int depth;
@@ -15,25 +15,28 @@ int depth;
 
 uint32_t _ext4(char show, char *name, uint32_t inode);
 
-uint32_t _deepsearch_leaf_ext4(char *name, uint16_t eh_entries);
+uint32_t deepsearch_leaf_ext4(char *name, uint16_t eh_entries);
 
-uint32_t _deepsearch_tree_ext4(char *name, uint16_t eh_entries);
+uint32_t deepsearch_tree_ext4(char *name, uint16_t eh_entries);
 
-void _deepshow_tree_ext4(uint16_t eh_entries);
+void deepshow_tree_ext4(uint16_t eh_entries);
 
-void _deepshow_leaf_ext4(uint16_t eh_entries);
-
-void _deepshow_fat32(off_t off);
+void deepshow_leaf_ext4(uint16_t eh_entries);
 
 off_t _fat32(char show, char *name);
 
-off_t _deepsearch_fat32(char *name, uint32_t position);
+off_t deepsearch_fat32(char *name, uint32_t position);
+
+void deepshow_fat32(off_t off);
 
 char *convert_UCS2_ASCII(uint16_t *in, char *out, int size);
 
 void listFile(char *name);
 
-uint32_t search(char show, char *name) {
+
+
+
+uint32_t search(char show, char *name){
 
 
 #ifdef SEARCH_DEBUG
@@ -96,12 +99,14 @@ void change_attr(int option, char *name, char *new_date) {
 					mode &= ~((unsigned short) (0x02 | 0x10 | 0x80));
 					lseek(fd, -sizeof mode, SEEK_CUR);
 					write(fd, &mode, sizeof mode);
+					printf("The permissions of %s have been edited.\n", name);
 					break;
 				case O_DIS_READ_ONLY:
 					read(fd, &mode, sizeof mode);
 					mode |= (unsigned short) (0x02 | 0x10 | 0x80);
 					lseek(fd, -sizeof mode, SEEK_CUR);
 					write(fd, &mode, sizeof mode);
+					printf("The permissions of %s have been edited.\n", name);
 					break;
 				case O_NEW_DATE:
 
@@ -109,7 +114,6 @@ void change_attr(int option, char *name, char *new_date) {
 
 						struct tm tm;
 						time_t t = 0;
-						uint32_t read_32 = 0;
 						memset(&tm, 0, sizeof(struct tm));
 
 						if (strptime(new_date, "%d%m%Y", &tm) != NULL) {
@@ -120,7 +124,7 @@ void change_attr(int option, char *name, char *new_date) {
 
 						}
 					}
-
+					printf("The creation date of %s has been modified\n", name);
 					break;
 				default:
 					printf("Operation not supported for the current filesystem.\n");
@@ -130,7 +134,7 @@ void change_attr(int option, char *name, char *new_date) {
 	} else if (type == FAT32) {
 
 		fat32_get_structure();
-		off_t off = _deepsearch_fat32(name, 0);
+		off_t off = deepsearch_fat32(name, 0);
 
 		if (off != NOT_FOUND) { //retrocompatibilidad
 
@@ -143,18 +147,22 @@ void change_attr(int option, char *name, char *new_date) {
 				case O_EN_READ_ONLY:
 					attribute |= 0x01;
 					write(fd, &attribute, sizeof attribute);
+					printf("The permissions of %s have been edited.\n", name);
 					break;
 				case O_DIS_READ_ONLY:
 					attribute &= ~(0x01);
 					write(fd, &attribute, sizeof attribute);
+					printf("The permissions of %s have been edited.\n", name);
 					break;
 				case O_ENABLE_HIDE:
 					attribute |= 0x02;
 					write(fd, &attribute, sizeof attribute);
+					printf("The visibility status of %s has been modified.\n", name);
 					break;
 				case O_DISABLE_HIDE:
 					attribute &= ~(0x02);
 					write(fd, &attribute, sizeof attribute);
+					printf("The visibility status of %s has been modified.\n", name);
 					break;
 				case O_NEW_DATE:
 
@@ -176,9 +184,14 @@ void change_attr(int option, char *name, char *new_date) {
 
 						}
 					}
+					printf("The creation date of %s has been modified\n", name);
 
 					break;
 			}
+		}else{
+
+			printf("Error: File not found.\n");
+
 		}
 	} else {
 
@@ -201,11 +214,11 @@ uint32_t _ext4(char show, char *name, uint32_t inode) {
 
 		if (header.eh_depth == 0) {
 
-			return_value = _deepsearch_leaf_ext4(name, header.eh_entries);
+			return_value = deepsearch_leaf_ext4(name, header.eh_entries);
 
 		} else {
 
-			return_value = _deepsearch_tree_ext4(name, header.eh_entries);
+			return_value = deepsearch_tree_ext4(name, header.eh_entries);
 		}
 
 		if (return_value > 0 && show == 1) {
@@ -223,11 +236,11 @@ uint32_t _ext4(char show, char *name, uint32_t inode) {
 #endif
 		if (header.eh_depth == 0) {
 
-			_deepshow_leaf_ext4(header.eh_entries);
+			deepshow_leaf_ext4(header.eh_entries);
 
 		} else {
 
-			_deepshow_tree_ext4(header.eh_entries);
+			deepshow_tree_ext4(header.eh_entries);
 
 		}
 
@@ -239,7 +252,7 @@ uint32_t _ext4(char show, char *name, uint32_t inode) {
 
 }
 
-uint32_t _deepsearch_tree_ext4(char *name, uint16_t eh_entries) {
+uint32_t deepsearch_tree_ext4(char *name, uint16_t eh_entries) {
 	int i;
 	ext4_extent_idx *leaf;
 	uint32_t return_value = 0;
@@ -261,11 +274,11 @@ uint32_t _deepsearch_tree_ext4(char *name, uint16_t eh_entries) {
 
 		if (header.eh_depth == 0) {
 
-			return_value = _deepsearch_leaf_ext4(name, header.eh_entries);
+			return_value = deepsearch_leaf_ext4(name, header.eh_entries);
 
 		} else {
 
-			return_value = _deepsearch_tree_ext4(name, header.eh_entries);
+			return_value = deepsearch_tree_ext4(name, header.eh_entries);
 
 		}
 
@@ -275,7 +288,7 @@ uint32_t _deepsearch_tree_ext4(char *name, uint16_t eh_entries) {
 
 }
 
-uint32_t _deepsearch_leaf_ext4(char *name, uint16_t eh_entries) {
+uint32_t deepsearch_leaf_ext4(char *name, uint16_t eh_entries) {
 
 	unsigned int i, bytes = 0;
 	size_t size;
@@ -354,7 +367,7 @@ uint32_t _deepsearch_leaf_ext4(char *name, uint16_t eh_entries) {
 
 }
 
-void _deepshow_tree_ext4(uint16_t eh_entries) {
+void deepshow_tree_ext4(uint16_t eh_entries) {
 
 	int i;
 	uint64_t read_64 = 0;
@@ -386,11 +399,11 @@ void _deepshow_tree_ext4(uint16_t eh_entries) {
 
 		if (header.eh_depth == 0) {
 
-			_deepshow_leaf_ext4(header.eh_entries);
+			deepshow_leaf_ext4(header.eh_entries);
 
 		} else {
 
-			_deepshow_tree_ext4(header.eh_entries);
+			deepshow_tree_ext4(header.eh_entries);
 
 		}
 
@@ -399,7 +412,7 @@ void _deepshow_tree_ext4(uint16_t eh_entries) {
 
 }
 
-void _deepshow_leaf_ext4(uint16_t eh_entries) {
+void deepshow_leaf_ext4(uint16_t eh_entries) {
 
 	int i;
 	char buff = 0;
@@ -448,11 +461,15 @@ void _deepshow_leaf_ext4(uint16_t eh_entries) {
 
 }
 
+
+
+
+
 off_t _fat32(char show, char *name) {
 
 	off_t off;
 
-	if ((off = _deepsearch_fat32(name, 0)) == NOT_FOUND) {
+	if ((off = deepsearch_fat32(name, 0)) == NOT_FOUND) {
 
 		printf("\nError: File not found\n");
 		return NOT_FOUND;
@@ -463,7 +480,7 @@ off_t _fat32(char show, char *name) {
 
 			printf("\nFile found! Showing content...\n\n");
 
-			_deepshow_fat32(off);
+			deepshow_fat32(off);
 
 		} else if (!show) {
 
@@ -476,7 +493,7 @@ off_t _fat32(char show, char *name) {
 	return off;
 }
 
-void _deepshow_fat32(off_t off) {
+void deepshow_fat32(off_t off) {
 
 	fat32_directory fat32_directory;
 	int i, position;
@@ -520,16 +537,22 @@ void _deepshow_fat32(off_t off) {
 	}
 }
 
-void _longname_fat32(char *name, uint8_t num) {
+void _longname_fat32(int *limit, char *name, uint8_t num) {
 
 	int i = 0;
 	fat32_vfat vfat;
 	char out[15];
 
-	for (; i < num; i++) {
+	for (; i < num && (*limit) < ((fat32.bytes_per_sector * fat32.sectors_per_cluster) / sizeof(fat32_directory)); i++) {
 
 		memset(&vfat, 0, sizeof(vfat));
 		read(fd, &vfat, sizeof vfat);
+		(*limit)++;
+
+		if(vfat.sequence == 0xE5){
+			memset(name, 0, 16);
+			continue;
+		}
 
 		if (vfat.attribute != 0xF) {
 			lseek(fd, -sizeof(vfat), SEEK_CUR);
@@ -546,7 +569,28 @@ void _longname_fat32(char *name, uint8_t num) {
 
 }
 
-off_t _deepsearch_fat32(char *name, uint32_t position) {
+void extract_filename(char *name, char const *short_name, char const *extension){
+	int i = 0,j = 0;
+
+	for(; i < 8; i++){
+
+		if(short_name[i] == ' ')break;
+		name[i] = short_name[i];
+
+	}
+	name[i++] = '.';
+
+	for(; j < 3; j++){
+
+		if(extension[j] == ' ')break;
+		name[i] = extension[j];
+		i++;
+
+	}
+
+}
+
+off_t deepsearch_fat32(char *name, uint32_t position) {
 
 	int i;
 	fat32_directory fat32_dir;
@@ -569,15 +613,12 @@ off_t _deepsearch_fat32(char *name, uint32_t position) {
 
 			read(fd, &fat32_dir, sizeof fat32_dir);
 
-			if (fat32_dir.short_name[0] == 0xE5 ||
-				fat32_dir.short_name[0] == 0x2E) {
-
-				memset(&fat32_dir, 0, sizeof(fat32_dir));
+			if ((*fat32_dir.short_name) == 0xE5){
+				if(*final_name != 0)memset(final_name, 0, MAX_NAME);
 				continue;
-
 			}
 
-			if (fat32_dir.short_name[0] == 0)break;
+			if ((*fat32_dir.short_name) == 0)break;
 
 			if (fat32_dir.attribute == 0xF) {
 
@@ -587,30 +628,33 @@ off_t _deepsearch_fat32(char *name, uint32_t position) {
 
 				read(fd, &vfat, sizeof vfat);
 
-				memset(final_name, 0, MAX_NAME);
+				if(*final_name != 0)memset(final_name, 0, MAX_NAME);
 
 				strcpy(final_name, convert_UCS2_ASCII(vfat.name, out, 5));
 				strcat(final_name, convert_UCS2_ASCII(vfat.name2, out, 6));
 				strcat(final_name, convert_UCS2_ASCII(vfat.name3, out, 2));
 
+
 				if (vfat.sequence & 0x40) {
 
-					_longname_fat32(final_name, (uint8_t) ((vfat.sequence & 0xBF) - 1));
+					_longname_fat32(&i,final_name, (uint8_t) ((vfat.sequence & 0xBF) - 1));
 
 				}
 
 
 			} else {
 
-				if (fat32_dir.attribute & 0x10) {
+				if (fat32_dir.attribute & 0x10 && !(fat32_dir.attribute & 0x2)) {
 
-					if (fat32_dir.short_name[0] != '.'
-						&& fat32_dir.short_name[1] != '.') {
+					if (*fat32_dir.short_name != '.'
+						&& *(fat32_dir.short_name+1) != '.' ) {
 
+						if(*final_name == 0){
+							extract_filename(final_name,fat32_dir.short_name,fat32_dir.file_extension);
+						}
 #ifdef SEARCH_DEBUG
 						listFile(final_name);
 #endif
-
 
 						if (CLUSTER(fat32_dir.cluster_high,
 									fat32_dir.cluster_low) != position) {
@@ -619,10 +663,13 @@ off_t _deepsearch_fat32(char *name, uint32_t position) {
 							depth++;
 #endif
 
-							if ((return_value = _deepsearch_fat32(name, CLUSTER(fat32_dir.cluster_high,
+
+							if ((return_value = deepsearch_fat32(name, CLUSTER(fat32_dir.cluster_high,
 																				fat32_dir.cluster_low))) != NOT_FOUND) {
 								return return_value;
 							}
+
+							if(*final_name != 0)memset(final_name, 0, MAX_NAME);
 
 #ifdef SEARCH_DEBUG
 							depth--;
@@ -635,14 +682,17 @@ off_t _deepsearch_fat32(char *name, uint32_t position) {
 					}
 
 
-				} else if (fat32_dir.attribute & 0x20) {
+				} else if (fat32_dir.attribute & 0x20 && !(fat32_dir.attribute & 0x2)) {
+
+					if(*final_name == 0){
+						extract_filename(final_name,fat32_dir.short_name,fat32_dir.file_extension);
+					}
 
 #ifdef SEARCH_DEBUG
 					if(!(fat32_dir.attribute & 0x02)){
 						listFile(final_name);
 					}
 #endif
-
 					if (!strcmp(name, final_name)) {
 
 						lseek(fd, -sizeof(fat32_dir), SEEK_CUR);
@@ -655,7 +705,6 @@ off_t _deepsearch_fat32(char *name, uint32_t position) {
 			}
 
 			memset(&fat32_dir, 0, sizeof(fat32_dir));
-
 
 		}
 

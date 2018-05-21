@@ -331,7 +331,7 @@ void ext4_inode_info(uint32_t inode) {
 
 	time_t t = read_32;
 	struct tm *tm_info = localtime(&t);
-	printf("Created on: %.2d/%.2d/%d\n", tm_info->tm_mday, tm_info->tm_mon, 1900 + tm_info->tm_year);
+	printf("Created on: %.2d/%.2d/%d\n", tm_info->tm_mday, tm_info->tm_mon + 1, 1900 + tm_info->tm_year);
 
 
 	lseek(fd, offset, SEEK_SET);
