@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
 	int type;
 
 	if ((type = check_operation(argc, argv)) < 0) {
-		printf("Error!\n");
+		printf("Error: Incorrect number of parameters.\n");
 		return -1;
 	}
 
@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 
 	if (fd < 0) {
 
-		fprintf(stderr, "Error al abrir el fichero.\n");
+		fprintf(stderr, "Unable to open the filesystem provided.\n");
 
 		return -1;
 	}

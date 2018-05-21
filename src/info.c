@@ -68,27 +68,20 @@ int detecta_tipo() {
 			return FAT32;
 
 		} else {
+			char fat_type[8];
 
-			return FAT16;
+			if (strcmp(read_at(0x36, fat_type), FAT12_NAME) == 0) {
+
+				return FAT12;
+
+			} else if (strcmp(fat_type, FAT16_NAME) == 0) {
+
+				return FAT16;
+
+			}
 
 		}
 
-		/*
-		char fat_type[8];
-
-		if (strcmp(read_at(0x36, fat_type), FAT12_NAME) == 0) {
-
-			return FAT12;
-
-		} else if (strcmp(fat_type, FAT16_NAME) == 0) {
-
-			return FAT16;
-
-		} else if (strcmp(read_at(0x52, fat_type), FAT32_NAME) == 0) {
-
-			return FAT32;
-
-		}*/
 	}
 	return UNKNOWN;
 }
@@ -311,8 +304,8 @@ void ext4_inode_info(uint32_t inode) {
 
 	off_t offset = lseek(fd, 0, SEEK_CUR);
 
-	uint32_t read_32 = 0;
-	uint32_t read_64 = 0;
+	uint64_t read_32 = 0;
+	uint64_t read_64 = 0;
 
 	lseek(fd, ext4.inode.table_loc * ext4.block.size + (ext4.inode.size * (inode - 1)), SEEK_SET);
 
@@ -324,7 +317,7 @@ void ext4_inode_info(uint32_t inode) {
 	read(fd, &read_32, sizeof(read_32));
 	read_64 = ((read_64 | read_32));
 
-	printf("\nFile Found! Size: %d bytes.\t", read_64);
+	printf("\nFile Found! Size: %d bytes.\t", (int)read_64);
 
 	lseek(fd, 0x88, SEEK_CUR);
 	read(fd, &read_32, sizeof(read_32));

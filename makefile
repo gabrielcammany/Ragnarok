@@ -4,7 +4,7 @@ FASE = 3
 
 CC = gcc
 COP =
-CFLAGS = -Wall -Wextra -g
+CFLAGS = -Wall -Wextra -g -lm
 
 EXE = ragnarok
 

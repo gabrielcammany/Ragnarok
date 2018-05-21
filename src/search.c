@@ -1,10 +1,10 @@
 //
 // Created by gabriel on 17/04/18.
 //
-
+#define _GNU_SOURCE
+#include <string.h>
 #include <stdlib.h>
 #include "../include/search.h"
-#include "../include/info.h"
 
 //#define SHOW_DEBUG
 //#define SEARCH_DEBUG
@@ -69,8 +69,20 @@ uint32_t search(char show, char *name){
 			_fat32(show, name);
 
 			break;
+		case EXT2:
+			printf("\nFile System not recognized. (EXT2)\n");
+			break;
+		case FAT16:
+			printf("\nFile System not recognized. (FAT16)\n");
+			break;
+		case FAT12:
+			printf("\nFile System not recognized. (FAT12)\n");
+			break;
+		case EXT3:
+			printf("\nFile System not recognized. (EXT3)\n");
+			break;
 		default:
-			printf("\nFilesystem format not supported.\n");
+			printf("\nFile System not recognized. (UNKNOWN)\n");
 			break;
 	}
 	return NOT_FOUND;
@@ -117,7 +129,7 @@ void change_attr(int option, char *name, char *new_date) {
 						time_t t = 0;
 						memset(&tm, 0, sizeof(struct tm));
 
-						if (strptime(new_date, "%d%m%Y", &tm) != NULL) {
+						if (!strptime(new_date, "%d%m%Y", &tm)) {
 
 							t = (uint32_t) mktime(&tm);
 							lseek(fd, 0x90, SEEK_CUR);
@@ -170,11 +182,9 @@ void change_attr(int option, char *name, char *new_date) {
 					if (strlen(new_date) == 8) {
 
 						struct tm tm;
-						time_t t = 0;
-						uint32_t read_32 = 0;
 						memset(&tm, 0, sizeof(struct tm));
 
-						if (strptime(new_date, "%d%m%Y", &tm) != NULL) {
+						if (!strptime(new_date, "%d%m%Y", &tm)) {
 
 							lseek(fd, off + 0x10, SEEK_SET);
 							uint16_t date = 0;
@@ -196,7 +206,23 @@ void change_attr(int option, char *name, char *new_date) {
 		}
 	} else {
 
-		printf("\nFilesystem format not supported.\n");
+		switch (type){
+			case EXT2:
+				printf("\nFile System not recognized. (EXT2)\n");
+				break;
+			case FAT16:
+				printf("\nFile System not recognized. (FAT16)\n");
+				break;
+			case FAT12:
+				printf("\nFile System not recognized. (FAT12)\n");
+				break;
+			case EXT3:
+				printf("\nFile System not recognized. (EXT3)\n");
+				break;
+			default:
+				printf("\nFile System not recognized. (UNKNOWN)\n");
+				break;
+		}
 
 	}
 }
@@ -391,7 +417,7 @@ void deepshow_tree_ext4(uint16_t eh_entries) {
 
 #ifdef SHOW_DEBUG
 		printf("Tree Entry %d Start read position 0x%X\n\n",i,
-			   lseek(fd, read_64 * ext4.block.size, SEEK_SET));
+			   (unsigned int)lseek(fd, read_64 * ext4.block.size, SEEK_SET));
 #else
 		lseek(fd, read_64 * ext4.block.size, SEEK_SET);
 #endif
@@ -441,7 +467,7 @@ void deepshow_leaf_ext4(uint16_t eh_entries) {
 
 #ifdef SHOW_DEBUG
 		printf("- Leaf entry %d \n- Start read position 0x%X\n- Length %d bytes\n\n",i,
-		lseek(fd, read_64 * ext4.block.size, SEEK_SET),leaf[i].ee_len * ext4.block.size);
+			   (unsigned int)lseek(fd, read_64 * ext4.block.size, SEEK_SET),leaf[i].ee_len * ext4.block.size);
 #else
 		lseek(fd, read_64 * ext4.block.size, SEEK_SET);
 #endif
@@ -497,7 +523,7 @@ off_t _fat32(char show, char *name) {
 void deepshow_fat32(off_t off) {
 
 	fat32_directory fat32_directory;
-	int i, position;
+	unsigned int i, position;
 	char buff;
 	uint32_t read_32;
 
@@ -538,7 +564,7 @@ void deepshow_fat32(off_t off) {
 	}
 }
 
-void _longname_fat32(int *limit, char *name, uint8_t num) {
+void _longname_fat32(unsigned int *limit, char *name, uint8_t num) {
 
 	int i = 0;
 	fat32_vfat vfat;
@@ -593,7 +619,7 @@ void extract_filename(char *name, char const *short_name, char const *extension)
 
 off_t deepsearch_fat32(char *name, uint32_t position) {
 
-	int i;
+	unsigned int i;
 	fat32_directory fat32_dir;
 	fat32_vfat vfat;
 	uint32_t read_32;
@@ -619,7 +645,7 @@ off_t deepsearch_fat32(char *name, uint32_t position) {
 				continue;
 			}
 
-			if ((*fat32_dir.short_name) == 0)break;
+			if ((unsigned char) (*fat32_dir.short_name) == 0)break;
 
 			if (fat32_dir.attribute == 0xF) {
 
@@ -647,10 +673,10 @@ off_t deepsearch_fat32(char *name, uint32_t position) {
 
 				if (fat32_dir.attribute & 0x10 && !(fat32_dir.attribute & 0x2)) {
 
-					if (*fat32_dir.short_name != '.'
-						&& *(fat32_dir.short_name+1) != '.' ) {
+					if ((unsigned char) (*fat32_dir.short_name) != '.'
+						&& (unsigned char) *(fat32_dir.short_name+1) != '.' ) {
 
-						if(*final_name == 0){
+						if((unsigned char) (*final_name) == 0){
 							extract_filename(final_name,fat32_dir.short_name,fat32_dir.file_extension);
 						}
 #ifdef SEARCH_DEBUG
@@ -670,7 +696,7 @@ off_t deepsearch_fat32(char *name, uint32_t position) {
 								return return_value;
 							}
 
-							if(*final_name != 0)memset(final_name, 0, MAX_NAME);
+							if((unsigned char) (*final_name) != 0)memset(final_name, 0, MAX_NAME);
 
 #ifdef SEARCH_DEBUG
 							depth--;
@@ -685,7 +711,7 @@ off_t deepsearch_fat32(char *name, uint32_t position) {
 
 				} else if (fat32_dir.attribute & 0x20 && !(fat32_dir.attribute & 0x2)) {
 
-					if(*final_name == 0){
+					if((unsigned char) (*final_name) == 0){
 						extract_filename(final_name,fat32_dir.short_name,fat32_dir.file_extension);
 					}
 
@@ -700,6 +726,8 @@ off_t deepsearch_fat32(char *name, uint32_t position) {
 						return lseek(fd, 0, SEEK_CUR);
 
 					}
+
+					if((unsigned char) (*final_name) != 0)memset(final_name, 0, MAX_NAME);
 
 				}
 
@@ -759,7 +787,7 @@ void listFile(char *name) {
 
 	}
 	printf("|-");
-	printf(name);
+	printf("%s",name);
 	printf("\n");
 }
 #endif
