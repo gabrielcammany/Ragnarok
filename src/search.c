@@ -6,8 +6,8 @@
 #include "../include/search.h"
 #include "../include/info.h"
 
-#define SHOW_DEBUG
-#define SEARCH_DEBUG
+//#define SHOW_DEBUG
+//#define SEARCH_DEBUG
 
 #ifdef SEARCH_DEBUG
 int depth;
@@ -73,6 +73,7 @@ uint32_t search(char show, char *name){
 			printf("\nFilesystem format not supported.\n");
 			break;
 	}
+	return NOT_FOUND;
 }
 
 void change_attr(int option, char *name, char *new_date) {
@@ -613,7 +614,7 @@ off_t deepsearch_fat32(char *name, uint32_t position) {
 
 			read(fd, &fat32_dir, sizeof fat32_dir);
 
-			if ((*fat32_dir.short_name) == 0xE5){
+			if ((unsigned char) (*fat32_dir.short_name) == 0xE5){
 				if(*final_name != 0)memset(final_name, 0, MAX_NAME);
 				continue;
 			}
