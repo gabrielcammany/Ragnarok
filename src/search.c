@@ -36,7 +36,7 @@ void listFile(char *name);
 
 
 
-uint32_t search(char show, char *name){
+void search(char show, char *name){
 
 
 #ifdef SEARCH_DEBUG
@@ -47,7 +47,9 @@ uint32_t search(char show, char *name){
 		case EXT4:
 
 			ext4_get_structure();
+
 			uint32_t inode = _ext4(show, name, 2);
+
 			if (!show) {
 
 				ext4_inode_info(inode);
@@ -60,8 +62,8 @@ uint32_t search(char show, char *name){
 
 				}
 			}
+			break;
 
-			return inode;
 		case FAT32:
 
 			fat32_get_structure();
@@ -85,7 +87,7 @@ uint32_t search(char show, char *name){
 			printf("\nFile System not recognized. (UNKNOWN)\n");
 			break;
 	}
-	return NOT_FOUND;
+
 }
 
 void change_attr(int option, char *name, char *new_date) {
@@ -523,25 +525,27 @@ off_t _fat32(char show, char *name) {
 void deepshow_fat32(off_t off) {
 
 	fat32_directory fat32_directory;
-	unsigned int i, position;
-	char buff;
+	unsigned int i, position = 0;
+	char buff = 0;
 	uint32_t read_32;
 
 	lseek(fd, off, SEEK_SET);
+
+	memset(&fat32_directory,0, sizeof(fat32_directory));
+
 	read(fd, &fat32_directory, sizeof(fat32_directory));
 
 	position = CLUSTER(fat32_directory.cluster_high, fat32_directory.cluster_low);
 
 	lseek(fd, (fat32.first_cluster + ((fat32.bytes_per_sector * fat32.sectors_per_cluster) * position)), SEEK_SET);
 
-	read(fd, &buff, sizeof(char));
-
 	for (i = 0; i < fat32_directory.size; i++) {
 
-		printf("%c", buff);
 		read(fd, &buff, sizeof(char));
 
-		if (buff == 0)break;
+        if (buff == '\0')break;
+
+        printf("%c", buff);
 
 		if (!(i % (fat32.bytes_per_sector * fat32.sectors_per_cluster)) && i) {
 
@@ -638,6 +642,8 @@ off_t deepsearch_fat32(char *name, uint32_t position) {
 
 		for (i = 0; i < ((fat32.bytes_per_sector * fat32.sectors_per_cluster) / sizeof(fat32_directory)); i++) {
 
+			memset(&fat32_dir, 0, sizeof(fat32_dir));
+
 			read(fd, &fat32_dir, sizeof fat32_dir);
 
 			if ((unsigned char) (*fat32_dir.short_name) == 0xE5){
@@ -690,7 +696,6 @@ off_t deepsearch_fat32(char *name, uint32_t position) {
 							depth++;
 #endif
 
-
 							if ((return_value = deepsearch_fat32(name, CLUSTER(fat32_dir.cluster_high,
 																				fat32_dir.cluster_low))) != NOT_FOUND) {
 								return return_value;
@@ -732,8 +737,6 @@ off_t deepsearch_fat32(char *name, uint32_t position) {
 				}
 
 			}
-
-			memset(&fat32_dir, 0, sizeof(fat32_dir));
 
 		}
 
