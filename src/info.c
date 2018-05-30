@@ -56,7 +56,9 @@ int detecta_tipo() {
 
 			}
 		}
+
 	} else {
+
 		//could possibly be a FAT filesystem
 		uint16_t read_16;
 
@@ -68,6 +70,7 @@ int detecta_tipo() {
 			return FAT32;
 
 		} else {
+
 			char fat_type[8];
 
 			if (strcmp(read_at(0x36, fat_type), FAT12_NAME) == 0) {
@@ -153,6 +156,7 @@ void ext4_info() {
 	printf("Last written: %s", ctime(&t)); //0x30 tiempo lo mismo
 
 
+
 }
 
 void read_with_offset(unsigned long offset, void *out, size_t size) {
@@ -218,29 +222,59 @@ void ext4_get_structure() {
 	uint32_t low;
 	uint32_t high;
 
-	if (ext4.block.size > EXT4_OFFSET) {
+    read_with_offset(0x60, &(high), sizeof(high));
 
-		//low
-		lseek(fd, ext4.block.size + 0x08, SEEK_SET);
-		read(fd, &(low), sizeof(low));
+    if(high & 0x80){
+
+        uint16_t read_16;
+        read_with_offset(0xFE, &(read_16), sizeof(read_16));
+
+        if(read_16 > 32){
+
+            if (ext4.block.size > EXT4_OFFSET) {
+
+                //low
+                lseek(fd, ext4.block.size + 0x08, SEEK_SET);
+                read(fd, &(low), sizeof(low));
 
 
-		//high
-		lseek(fd, ext4.block.size + 0x28, SEEK_SET);
-		read(fd, &(high), sizeof(high));
+                //high
+                lseek(fd, ext4.block.size + 0x28, SEEK_SET);
+                read(fd, &(high), sizeof(high));
 
-	} else {
+            } else {
 
-		//low
-		read_with_offset(ext4.block.size + 0x08, &low, sizeof low);
+                //low
+                read_with_offset(ext4.block.size + 0x08, &low, sizeof low);
 
 
-		//high
-		read_with_offset(ext4.block.size + 0x28, &high, sizeof high);
+                //high
+                read_with_offset(ext4.block.size + 0x28, &high, sizeof high);
 
-	}
+            }
 
-	ext4.inode.table_loc = (((uint64_t) (high)) << 32) | low;
+            ext4.inode.table_loc = (((uint64_t) (high)) << 32) | low;
+
+        }else{
+
+            //low
+            lseek(fd, ext4.block.size + 0x08, SEEK_SET);
+            read(fd, &(low), sizeof(low));
+
+            ext4.inode.table_loc = low;
+
+
+        }
+
+    }else{
+
+        //low
+        lseek(fd, ext4.block.size + 0x08, SEEK_SET);
+        read(fd, &(low), sizeof(low));
+
+        ext4.inode.table_loc = low;
+
+    }
 
 	read_with_offset(0x58, &(ext4.inode.size), sizeof(uint16_t));
 
@@ -307,25 +341,31 @@ void ext4_inode_info(uint32_t inode) {
 	uint64_t read_32 = 0;
 	uint64_t read_64 = 0;
 
-	lseek(fd, ext4.inode.table_loc * ext4.block.size + (ext4.inode.size * (inode - 1)), SEEK_SET);
+	lseek(fd, (ext4.inode.table_loc * ext4.block.size + (ext4.inode.size * (inode - 1))) + 0x6C, SEEK_SET);
 
-	lseek(fd, 0x6C, SEEK_CUR);
 	read(fd, &read_32, sizeof(read_32));
 	read_64 = ((read_64 | read_32 << 32));
 
-	lseek(fd, -0x6C, SEEK_CUR);
+	lseek(fd, (ext4.inode.table_loc * ext4.block.size + (ext4.inode.size * (inode - 1))) + 0x04, SEEK_SET);
 	read(fd, &read_32, sizeof(read_32));
 	read_64 = ((read_64 | read_32));
 
 	printf("\nFile Found! Size: %d bytes.\t", (int)read_64);
 
-	lseek(fd, 0x88, SEEK_CUR);
+	lseek(fd, (ext4.inode.table_loc * ext4.block.size + (ext4.inode.size * (inode - 1))) + 0x90, SEEK_SET);
 	read(fd, &read_32, sizeof(read_32));
 
 	time_t t = read_32;
 	struct tm *tm_info = localtime(&t);
-	printf("Created on: %.2d/%.2d/%d\n", tm_info->tm_mday, tm_info->tm_mon + 1, 1900 + tm_info->tm_year);
+	if(tm_info != 0){
 
+		printf("Created on: %.2d/%.2d/%d\n", tm_info->tm_mday, tm_info->tm_mon + 1, 1900 + tm_info->tm_year);
+
+	}else{
+
+		printf("Error in localtime!\n");
+
+	}
 
 	lseek(fd, offset, SEEK_SET);
 

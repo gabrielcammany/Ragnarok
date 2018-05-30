@@ -1,10 +1,12 @@
 //
 // Created by gabriel on 17/04/18.
 //
+
 #define _GNU_SOURCE
 #include <string.h>
 #include <stdlib.h>
 #include "../include/search.h"
+#include "../include/info.h"
 
 //#define SHOW_DEBUG
 //#define SEARCH_DEBUG
@@ -111,9 +113,11 @@ void change_attr(int option, char *name, char *new_date) {
 			switch (option) {
 				case O_EN_READ_ONLY:
 					read(fd, &mode, sizeof mode);
+					printf("MODE 0x%X\n",mode);
 					mode &= ~((unsigned short) (0x02 | 0x10 | 0x80));
 					lseek(fd, -sizeof mode, SEEK_CUR);
 					write(fd, &mode, sizeof mode);
+                    printf("MODE 0x%X\n",mode);
 					printf("The permissions of %s have been edited.\n", name);
 					break;
 				case O_DIS_READ_ONLY:
@@ -131,15 +135,25 @@ void change_attr(int option, char *name, char *new_date) {
 						time_t t = 0;
 						memset(&tm, 0, sizeof(struct tm));
 
-						if (!strptime(new_date, "%d%m%Y", &tm)) {
+						if (strptime(new_date, "%d%m%Y", &tm)) {
 
 							t = (uint32_t) mktime(&tm);
-							lseek(fd, 0x90, SEEK_CUR);
+                            lseek(fd, 0x90, SEEK_CUR);
 							write(fd, &t, sizeof(uint32_t));
 
+						}else{
+
+                            printf("Error in strptime\n");
+
 						}
+
+                        printf("The creation date of %s has been modified\n", name);
+
+					}else{
+
+                        printf("Incorrect date format\n");
+
 					}
-					printf("The creation date of %s has been modified\n", name);
 					break;
 				default:
 					printf("Operation not supported for the current filesystem.\n");
@@ -186,7 +200,7 @@ void change_attr(int option, char *name, char *new_date) {
 						struct tm tm;
 						memset(&tm, 0, sizeof(struct tm));
 
-						if (!strptime(new_date, "%d%m%Y", &tm)) {
+						if (strptime(new_date, "%d%m%Y", &tm)) {
 
 							lseek(fd, off + 0x10, SEEK_SET);
 							uint16_t date = 0;
@@ -195,9 +209,19 @@ void change_attr(int option, char *name, char *new_date) {
 											   (((tm.tm_year + 1900 - 1980) & 0b1111111) << 9));
 							write(fd, &date, sizeof date);
 
+						}else{
+
+                            printf("Error in strptime\n");
+
 						}
+
+                        printf("The creation date of %s has been modified\n", name);
+
+					}else{
+
+                        printf("Incorrect date format\n");
+
 					}
-					printf("The creation date of %s has been modified\n", name);
 
 					break;
 			}
@@ -238,6 +262,7 @@ uint32_t _ext4(char show, char *name, uint32_t inode) {
 	lseek(fd, (ext4.inode.table_loc * ext4.block.size) + (ext4.inode.size * (inode - 1)) + 0x28, SEEK_SET);
 
 	read(fd, &header, sizeof(header));
+
 
 	if (show < 2) {
 
@@ -342,7 +367,15 @@ uint32_t deepsearch_leaf_ext4(char *name, uint16_t eh_entries) {
 
 		do {
 
-			size = sizeof(char) * ((dir_entry_2.rec_len > (256 + 8) ? dir_entry_2.name_len : dir_entry_2.rec_len - 8));
+		    if(dir_entry_2.inode > ext4.inode.count){
+		        break;
+		    }
+
+            size = sizeof(char) * ((dir_entry_2.rec_len > (256 + 8) ? dir_entry_2.name_len : dir_entry_2.rec_len - 8));
+
+			if(dir_entry_2.rec_len < 8){
+                break;
+			}
 
 			file_name = (char *) calloc(size, size);
 			read(fd, file_name, size);
@@ -640,6 +673,8 @@ off_t deepsearch_fat32(char *name, uint32_t position) {
 
 	do {
 
+        if((unsigned char) (*final_name) != 0)memset(final_name, 0, MAX_NAME);
+
 		for (i = 0; i < ((fat32.bytes_per_sector * fat32.sectors_per_cluster) / sizeof(fat32_directory)); i++) {
 
 			memset(&fat32_dir, 0, sizeof(fat32_dir));
@@ -686,7 +721,9 @@ off_t deepsearch_fat32(char *name, uint32_t position) {
 							extract_filename(final_name,fat32_dir.short_name,fat32_dir.file_extension);
 						}
 #ifdef SEARCH_DEBUG
-						listFile(final_name);
+                        if(!(fat32_dir.attribute & 0x02)){
+                            listFile(final_name);
+                        }
 #endif
 
 						if (CLUSTER(fat32_dir.cluster_high,
@@ -710,11 +747,10 @@ off_t deepsearch_fat32(char *name, uint32_t position) {
 
 						}
 
-
 					}
 
 
-				} else if (fat32_dir.attribute & 0x20 && !(fat32_dir.attribute & 0x2)) {
+				} else if (fat32_dir.attribute & 0x20) {
 
 					if((unsigned char) (*final_name) == 0){
 						extract_filename(final_name,fat32_dir.short_name,fat32_dir.file_extension);
@@ -724,6 +760,8 @@ off_t deepsearch_fat32(char *name, uint32_t position) {
 					if(!(fat32_dir.attribute & 0x02)){
 						listFile(final_name);
 					}
+
+
 #endif
 					if (!strcmp(name, final_name)) {
 
